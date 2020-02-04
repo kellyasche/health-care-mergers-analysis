@@ -1,0 +1,89 @@
+countyfp,Name,Dem_RUCA,Dem_Desc,edr,planning.region
+1,aitkin,A,Entirely rural,EDR  3 - Arrowhead,Northeast Minnesota
+3,anoka,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+5,becker,C,Urban/town/rural mix,EDR  4 - West Central,Northwest Minnesota
+7,beltrami,B,Town/rural mix,EDR  2 - Headwaters,Northwest Minnesota
+9,benton,C,Urban/town/rural mix,EDR  7W- Central,Central Minnesota
+11,big stone,A,Entirely rural,EDR  6W- Upper Minnesota Valley,Southwest Minnesota
+13,blue earth,D,Entirely urban,EDR  9 - South Central,Southwest Minnesota
+15,brown,B,Town/rural mix,EDR  9 - South Central,Southwest Minnesota
+17,carlton,C,Urban/town/rural mix,EDR  3 - Arrowhead,Northeast Minnesota
+19,carver,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+21,cass,B,Town/rural mix,EDR  5 - North Central,Northwest Minnesota
+23,chippewa,B,Town/rural mix,EDR  6W- Upper Minnesota Valley,Southwest Minnesota
+25,chisago,D,Entirely urban,EDR  7E- East Central,Central Minnesota
+27,clay,D,Entirely urban,EDR  4 - West Central,Northwest Minnesota
+29,clearwater,B,Town/rural mix,EDR  2 - Headwaters,Northwest Minnesota
+31,cook,A,Entirely rural,EDR  3 - Arrowhead,Northeast Minnesota
+33,cottonwood,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+35,crow wing,B,Town/rural mix,EDR  5 - North Central,Northwest Minnesota
+37,dakota,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+39,dodge,D,Entirely urban,EDR 10 - Southeast,Southeast Minnesota
+41,douglas,B,Town/rural mix,EDR  4 - West Central,Northwest Minnesota
+43,faribault,B,Town/rural mix,EDR  9 - South Central,Southwest Minnesota
+45,fillmore,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+47,freeborn,B,Town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+49,goodhue,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+51,grant,A,Entirely rural,EDR  4 - West Central,Northwest Minnesota
+53,hennepin,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+55,houston,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+57,hubbard,B,Town/rural mix,EDR  2 - Headwaters,Northwest Minnesota
+59,isanti,C,Urban/town/rural mix,EDR  7E- East Central,Central Minnesota
+61,itasca,B,Town/rural mix,EDR  3 - Arrowhead,Northeast Minnesota
+63,jackson,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+65,kanabec,C,Urban/town/rural mix,EDR  7E- East Central,Central Minnesota
+67,kandiyohi,B,Town/rural mix,EDR  6E- Southwest Central,Central Minnesota
+69,kittson,A,Entirely rural,EDR  1 - Northwest,Northwest Minnesota
+71,koochiching,B,Town/rural mix,EDR  3 - Arrowhead,Northeast Minnesota
+73,lac qui parle,A,Entirely rural,EDR  6W- Upper Minnesota Valley,Southwest Minnesota
+75,lake,B,Town/rural mix,EDR  3 - Arrowhead,Northeast Minnesota
+77,lake of the woods,A,Entirely rural,EDR  2 - Headwaters,Northwest Minnesota
+79,le sueur,C,Urban/town/rural mix,EDR  9 - South Central,Southwest Minnesota
+81,lincoln,A,Entirely rural,EDR  8 - Southwest,Southwest Minnesota
+83,lyon,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+87,mahnomen,A,Entirely rural,EDR  2 - Headwaters,Northwest Minnesota
+89,marshall,C,Urban/town/rural mix,EDR  1 - Northwest,Northwest Minnesota
+91,martin,B,Town/rural mix,EDR  9 - South Central,Southwest Minnesota
+85,mcleod,C,Urban/town/rural mix,EDR  6E- Southwest Central,Central Minnesota
+93,meeker,B,Town/rural mix,EDR  6E- Southwest Central,Central Minnesota
+95,mille lacs,C,Urban/town/rural mix,EDR  7E- East Central,Central Minnesota
+97,morrison,B,Town/rural mix,EDR  5 - North Central,Northwest Minnesota
+99,mower,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+101,murray,A,Entirely rural,EDR  8 - Southwest,Southwest Minnesota
+103,nicollet,C,Urban/town/rural mix,EDR  9 - South Central,Southwest Minnesota
+105,nobles,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+107,norman,A,Entirely rural,EDR  1 - Northwest,Northwest Minnesota
+109,olmsted,D,Entirely urban,EDR 10 - Southeast,Southeast Minnesota
+111,otter tail,B,Town/rural mix,EDR  4 - West Central,Northwest Minnesota
+113,pennington,B,Town/rural mix,EDR  1 - Northwest,Northwest Minnesota
+115,pine,C,Urban/town/rural mix,EDR  7E- East Central,Central Minnesota
+117,pipestone,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+119,polk,C,Urban/town/rural mix,EDR  1 - Northwest,Northwest Minnesota
+121,pope,B,Town/rural mix,EDR  4 - West Central,Northwest Minnesota
+123,ramsey,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+125,red lake,A,Entirely rural,EDR  1 - Northwest,Northwest Minnesota
+127,redwood,B,Town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+129,renville,A,Entirely rural,EDR  6E- Southwest Central,Central Minnesota
+131,rice,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+133,rock,C,Urban/town/rural mix,EDR  8 - Southwest,Southwest Minnesota
+135,roseau,B,Town/rural mix,EDR  1 - Northwest,Northwest Minnesota
+139,scott,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+141,sherburne,D,Entirely urban,EDR  7W- Central,Central Minnesota
+143,sibley,C,Urban/town/rural mix,EDR  9 - South Central,Southwest Minnesota
+137,st. louis,C,Urban/town/rural mix,EDR  3 - Arrowhead,Northeast Minnesota
+145,stearns,C,Urban/town/rural mix,EDR  7W- Central,Central Minnesota
+147,steele,B,Town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+149,stevens,B,Town/rural mix,EDR  4 - West Central,Northwest Minnesota
+151,swift,B,Town/rural mix,EDR  6W- Upper Minnesota Valley,Southwest Minnesota
+153,todd,B,Town/rural mix,EDR  5 - North Central,Northwest Minnesota
+155,traverse,A,Entirely rural,EDR  4 - West Central,Northwest Minnesota
+157,wabasha,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+159,wadena,B,Town/rural mix,EDR  5 - North Central,Northwest Minnesota
+161,waseca,C,Urban/town/rural mix,EDR  9 - South Central,Southwest Minnesota
+163,washington,D,Entirely urban,EDR 11 - 7 County Twin Cities,Seven County Mpls-St Paul
+165,watonwan,B,Town/rural mix,EDR  9 - South Central,Southwest Minnesota
+167,wilkin,B,Town/rural mix,EDR  4 - West Central,Northwest Minnesota
+169,winona,C,Urban/town/rural mix,EDR 10 - Southeast,Southeast Minnesota
+171,wright,C,Urban/town/rural mix,EDR  7W- Central,Central Minnesota
+173,yellow medicine,B,Town/rural mix,EDR  6W- Upper Minnesota Valley,Southwest Minnesota
+0,minnesota,,,Minnesota,Minnesota

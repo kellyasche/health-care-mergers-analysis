@@ -1,0 +1,127 @@
+Definitions of codes used in the 2017 HAR formset,,
+,,
+code,label,definition
+7082,Total Available Beds,"The number of acute care beds that are immediately available for use or could be brought online within a short period of time.  Available beds should not include:  labor rooms, bassinets, post-anesthesia beds, post-operative beds, or other non-routine beds."
+,,
+,Provision for Bad Debts,"The 2017 HAR Formset reflects the changes to accounting for Bad Debt and it is now classified as a Contractual Adjustment, not an Operating Expense. 
+
+The provision for actual or expected doubtful accounts resulting from the extension of credit. This includes the total dollar amount charged for health care services that were provided for which there was an expectation of payment. Do not include charity care or self pay discounts in this category; only include the portion of the charge for which there was an expectation of payment. 
+
+In determining whether to classify charity care as bad debt expense, the facility must consider the following points:
+A. The facility must presume that the patient is able and willing to pay until and unless the facility has reason to consider this a charity care case under its charity care policy and the facility classifies this as a charity care case; and
+B. The facility may include as bad debt expense unpaid deductibles, co-insurance, co-payments, and charges for non-covered services and any other unpaid patient responsibilities.
+"
+0216,,
+0739,,
+8100,,
+,,
+0762,Charity Care Adjustments,"The total dollar amount that would have been charged by a facility for rendering health care services for which the facility did not expect payment. Charity care results from a provider’s policy to provide health care services to individuals who meet the providers established criteria of inability to pay.
+
+Self Pay discounts should be reported under (#0762) Charity Care Adjustments if the discount is specifically included in your hospital’s Charity Care policy. If a self pay discount is included in (#0762) Charity Care, do not report the amount in (#7410) Self Pay Discounts. 
+
+"
+"7573
+7574",,"Please break out Charity Care amounts from insured (7571) and uninsured patients (7572). For the uninsured patients, also breakout the amounts where the hospital has forgiven the entire bill (7573) from where the hospital has applied a partial discount (7574) to the bill. If an uninsured patient is eligible for a self pay discount and full charity care under the hospital’s charity care policy, record the entire charge in (7573) Full Charity Care. If an uninsured patient is eligible for a self pay discount and a partial charity care discount under the hospital’s charity care policy, record the total amount of the self pay discount and partial charity care discount in (7574) Partial Charity Care. "
+,,Charity care is a required field in the HAR and cannot be reported in 8100 Bad Debt Expense.
+,,
+0630,Total Administrative Expenses,The sum of the following expenses:
+,,"·        Admitting, patient billing, and collections:  All of the costs related to inpatient and outpatient admission or registration, whether scheduled or non-scheduled; the scheduling of admission times; insurance verification, including coordination of benefits; preparing and submitting claim forms; and cashiering, credit, and collection functions."
+,,"·        Accounting and financial reporting:  All costs related to fiscal services, such as general accounting, budgeting, cost accounting, payroll accounting, accounts payable, and plant, equipment, and inventory accounting."
+,,"·        Quality assurance and utilization management program or activity:  All costs associated with any activities or programs established for the purpose of quality of care evaluation and utilization management. Activities include quality assurance, development of practice protocols, utilization review, peer review, provider credentialing, and all other medical care evaluation activities."
+,,"·        Community and wellness education:  All the costs related to wellness programs, health promotion, community education classes, support groups, and other outreach programs and health screening included in a specific community or wellness education cost center or reclassified from other cost centers.  Community and wellness education expenses does not include patient education programs."
+,,"·        Promotion and marketing:  All costs related to marketing, promotion, and advertising activities such as billboards, yellow page listing, cost of materials, advertising agency fees, marketing representative wages and fringe benefits, travel, and other expenses allocated to the promotion and marketing activities.  Promotion and marketing expenses does not include costs charged to other departments within the hospital."
+,,"·        Taxes, fees, and assessments:  The direct payments made to government agencies including property taxes; medical care surcharge; MinnesotaCare tax; unrelated business income taxes; any assessments imposed by local, state, or federal jurisdiction; all fees associated with the facility's new or renewal certification with state or federal regulatory agencies, including fees associated with joint Commission on Accreditation of Healthcare Organizations (JCAHO) accreditation; and any fees or fines paid to government agencies for examinations related to regulation."
+,,"·        Malpractice:  All costs of malpractice including malpractice insurance, self-insurance expenses including program administration, and malpractice losses not covered by insurance, including deductibles and malpractice attorney fees."
+,,"·        Other administrative expenses:  All costs for the overall operation of the facility associated with management, administration, and legal staff functions, including the costs of governing boards, executive wages and benefits, auxiliary and other volunteer groups, purchasing, telecommunications, printing and duplicating, receiving and storing, and personnel management.  Other administrative expenses includes all wages and benefits, donations and support, direct and in-kind, for the purpose of lobbying and influencing policy makers and legislators, including membership dues, and all expenses associated with public policy development, such as response to rulemaking and interaction with government agency personnel including attorney fees for reviewing and analyzing governmental policies.  Other administrative expenses does not include the costs of public relations included in promotion and marketing expenses, the costs of legal staff already allocated to other functions, or the costs of medical records, social services, and nursing administration."
+,,
+0637,Total Cost of Regulatory and Compliance Reporting,"All costs of the facility associated with, or directly incurred in the preparation and submission of financial, statistical, or other utilization, satisfaction, or quality reports, or summary plan descriptions that are required by federal, state, and local agencies.  This would include Federal Ambulatory Surgery Association (FASA) and Accreditation Association for Ambulatory Health Care, Inc. (AAAHC). The portion of Account 0637 that is administrative expenses is to be reported in Account 0630 and included in the total of Account 0637."
+,,
+0650,Total Management Information Systems Expenses,"All costs related to maintaining and operating the data processing system of the facility, including such functions as admissions, medical records, patient charges, decision support systems, and fiscal services.  The portion of Account 0650 that is administrative expenses is to be reported in Account 0630 and included in the total of Account 0650."
+,,
+0655,"Total Plant, Equipment and Occupancy Expenses","All costs related to plant, equipment, and occupancy expenses, including maintenance, repairs, and engineering expenses, building rent and leases, equipment rent and leases, and utilities.  Plant, equipment, and occupancy expenses include interest expenses and depreciation. .  The portion of Account 0655 that is administrative expenses is to be reported in Account 0630 and included in the total of Account 0655."
+,,
+7410,Self Pay Discounts,"This category includes discounts for persons who qualify for partial-bill or sliding scale discounts under a provider’s policy that provides discounts to the uninsured. This includes discounts applied to those that qualify for a discount under the Fair Price for the Uninsured agreement with the Minnesota Attorney General’s office. Do not include prompt pay discounts or staff courtesy discounts; these should be recorded under Other Payers Adjustments and Uncollectibles (#0751).
+Self Pay discounts should be reported under (#0762) Charity Care Adjustments if the discount is specifically included in your hospital’s Charity Care policy. If a self pay discount is included in (#0762) Charity Care, do not report the amount in (#7410) Self Pay Discounts.
+"
+,,
+,Other Payers: ,"This category is for the payers that are not already identified in the breakouts for Non-Managed Care, Managed Care, and Individual (Self Pay). This would include Champus, Workman's Comp., Auto, etc. for each of the respective sections:  Adjustments, Charges, Days, and Admissions. Please note that Commercial and Private payers are not reported on the Other Payers lines. This category also includes small balance write offs, staff courtesy discounts, and prompt pay discounts."
+0751,Other Payers: Adjustments and Uncollectibles,
+0847,Other Payers: Patient Charges,
+4026,Other Payers: Patient Days,
+4344,Other Payers: Admissions,
+,,
+NPI,National Provider Identifier," Enter the NPI number assigned by CMS for the Acute Care hospital.
+See http://www.cms.hhs.gov/NationalProvIdentStand/ for more information."
+,,
+7567,Bad Debt Write Offs,The amount of actual write offs for bad debt. Please break out actual bad debt write offs from insured (7568) and uninsured (7569) patients. Amounts in these categories will be used to estimate the insured and uninsured portions of (#8100) Provision for Bad Debts.
+,,
+7570,Self Pay Discount Percentage Applied,This is a non-public item. The percentage applied to self pay patient charges based on AG agreement to apply discount of most favored payer.
+,,
+7575,Average Partial Charity Care Discount Applied,What is the average partial discount applied to Uninsured Patients who qualify for a partial charity care discount under your hospital’s Charity Care Policy. Include self pay discounts in this calculation that are included in your hospital’s Charity Care Policy.
+,,
+7310,Community Care,"The cost for medical care that a hospital has determined is charity care as defined under Minnesota Rules, part 4650.0115, or for which the hospital determines after billing for the services that there is a demonstrated inability to pay. Any costs forgiven under a hospital's community care or charity care plan or under Minnesota Statutes, section 62J.83 may be counted in the hospital's calculation of “community care.”  “Community care” does not include bad debt expenses and discounted charges available to the uninsured.  
+
+For the purposes of reporting under section 21, “community care” will be charity care (0762) adjusted by a cost to charge ratio.  This field is a calculated field, no user input is necessary."
+,,
+7577,Underpayment for Services Provided under State Health Care Programs,"Underpayments for Services Provided under State Health Care Programs:  Estimates of payment shortfalls for services provided under the following State Health Care Programs, where state government directly sets payment rates: Medicaid, PMAP, and MinnesotaCare.  
+
+For the purposes of reporting under section 21, “underpayments for services provided under State Health Care Programs” are calculated by subtracting payments for State Health Care Programs (the sum of patient charges and contractual adjustments) from the product of patient charges for State Health Care Programs and the cost-to-charge ratio.  This field is a calculated field, no user input is necessary."
+,,
+7578,Cost of Operating Subsidized Services,"Cost of Operating Subsidized Services: The cost associated with providing hospital patient services that are operated at a significant financial loss.  Only include such services that meet all of the following criteria: a) exhibit negative margins even after the effects of charity or community care (7310) and Medicaid shortfalls (7577) have been removed; b) represent an actual community benefit; c) if discontinued at the facility, would be unavailable in the area or fall to the responsibility of other providers or government agencies.  Do not include potential payment shortfalls associated with care for Medicare patients."
+,,
+7579,Education Cost,"The cost of operating professional education and training programs and providing financial assistance to physicians, medical students, nurses, nursing students, and other health professionals.  Only include Medicare Indirect Medical Education (IME) payments if the Medicare IME reimbursements are included as offsets.  Do not include costs associated with providing continuing medical education (CME), financial assistance or tuition reimbursements that are offered as employee benefits, or the as cost of required education or employee orientation programs."
+,,
+7580,Research Cost,"The cost of conducting research that is intended for the public domain and falls in one of the following three areas: clinical research, community health research, and research on innovative health care delivery."
+,,
+7581,Community Health Services Cost,"The total cost of activities to improve community health in the following areas:
+1) Providing community health education, including classes, support groups and self-help programs.
+2) Offering community-based clinic services and mobile units that are outside of the primary business activities of the facility.
+3) Providing health care support services in the form of enrollment assistance, information and referral.
+
+ Do not include the cost of activities whose primary purpose is marketing or directly associated with hospital patient care or discharge planning. "
+,,
+7582,Financial and In-Kind Contributions,"The total of value of cash and in-kind contributions made by the facility to health care organization and community groups to improve the health of the community.  In-kind contributions include goods and services donated or provided for an activity without compensation.  Do not count volunteer contributions by employees or emergency funds provided to employees.  Also, do not include the cost of promotional and marketing activities."
+,,
+7583,Cost of Community Building Activities,"The value of programs and activities that, while not directly related to health care, are designed to address root causes of health problems in the community.  Programs and activities may include physical improvements to the neighborhood and housing stock, investments in economic development, support of the operational structure of communities and community networks, environmental improvements, and advocacy for health improvements.  Do not include the value of activities that are undertaken primarily for marketing purposes.  Also, do not include investments in facility construction and improvement and the cost of routine financial investments."
+,,
+7584,Cost of Community Benefit Operations,"The overhead cost associated with operating a community benefit program.  This may include the cost associated with maintaining dedicated community benefit staff, conducting community benefit and community asset assessments, and designing a community benefit strategy.  Do not count the cost of staff to coordinate in-house volunteer programs, including outpatient volunteer programs.  Do not count the cost of conducting market share and marketing analyses."
+,,
+7576,Purchased Charity Care Services,"Purchased Charity Care Services consist of medical services from physicians, home health agencies, pharmacies, nursing homes, etc. purchased by a hospital to help charity care patients avoid additional, more expensive inpatient hospital services related to chronic disease management for diagnosis such as chronic heart failure, diabetes, chronic obstructive pulmonary disease, etc. Purchased charity care is also used for completion of episodic treatment such as orthopedic implant patient follow on care involving nursing home stays for therapy or home health agency services for home therapy needed for complete care."
+,,
+7594,Major Capital Expenditure Commitments,"“Major spending commitment” means an expenditure in excess of $1,000,000 for:
+     (1) acquisition of a unit of medical equipment;
+     (2) a capital expenditure for a single project for the
+     purposes of providing health care services, other 
+     than for the acquisition of medical equipment;
+     (3) offering a new specialized service not 
+     offered before;
+     (4) planning for an activity that would qualify as a 
+     major spending commitment under this 
+     paragraph; or
+     (5) a project involving a combination of two or 
+     more of the activities in clauses (1) to (4).
+
+The cost of acquisition of medical equipment, and the 
+amount of a capital expenditure, is the total cost to the
+provider regardless of whether the cost is distributed over
+time through a lease arrangement or other financing or 
+payment mechanism.
+"
+,,
+return to formset,Date of Spending Commitment,The date the project was authorized by an Executive or Board of Directors
+,,
+return to section 57,Medical Equipment,Medical Equipment means fixed and movable equipment that is used by a provider in the provision of a health care service. 
+,,
+,New Specialized Service,New Specialized Service means a specialized health care procedure or treatment regimen offered by a provider that was not previously offered by the provider.
+,,
+,Specialty Care,"Specialty Care includes but is not limited to cardiac, neurology, orthopedic, obstetrics, mental health, chemical dependency, and emergency services."
+,,
+Return to Project Specific tab,Exceptions,"Capital Expenditure Retrospective Review reporting requirements do not apply to the following capital activities:
+
+  1) a major spending commitment made by a research and teaching institution for purposes of conducting medical education, medical research supported or sponsored by a medical school, or by a federal or foundation grant or clinical trials;
+
+  2) a major spending commitment for building maintenance including heating, water, electricity, and other maintenance-related expenditures; and
+
+  3) a major spending commitment for activities, not directly related to the delivery of patient care services, including food service, laundry, housekeeping, and other service-related activities.
+
+  4) mergers, acquisitions, and other changes in ownership or control that, in the judgment of the commissioner, do not involve a substantial expansion of service capacity or a substantial change in the nature of health care services provided."
