@@ -509,3 +509,57 @@ girafe( ggobj = cah.income.trends.ruca.plot, width_svg = 7) %>%
                  opts_sizing(rescale = FALSE),
                  opts_zoom(max = 5))
 ```
+
+<br>
+
+# Affiliated vs. non-affiliated hospitals
+
+## Percent of hospitals affiliated {.tabset}
+
+Summary here
+
+<br>
+
+```{r prep pct of hospitals affiliated, include=FALSE, cache=TRUE}
+master.har.affiliation <- read_csv("Data/HAR/Master-har-affiliation.csv") %>%
+  rename(year = rpt_year) %>%
+  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " "),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"),
+         edr = fct_relevel(edr, "EDR 1 - Northwest", "EDR 2 - Headwaters", "EDR 3 - Arrowhead", "EDR 4 - West Central", "EDR 5 - North Central", "EDR 6E- Southwest Central", "EDR 6W- Upper Minnesota Valley", "EDR 7E- East Central", "EDR 7W- Central", "EDR 8 - Southwest", "EDR 9 - South Central", "EDR 10 - Southeast", "EDR 11 - 7 County Twin Cities", "Minnesota"),
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban")) %>%
+  rename(system.affiliation = 13,
+         affiliation.type = 14)
+
+har.pct.affiliated.pr <- master.har.affiliation %>%
+  filter(code == 200) %>%
+  mutate(affiliated.binary = ifelse(system.affiliation == "No Affiliation", "No affiliation", "Affiliated"),
+         affiliated.binary = as.factor(affiliated.binary)) %>%
+  group_by(year, planning.region, affiliated.binary) %>%
+  summarise(n()) %>%
+  ungroup() %>%
+  rename(count = 4) %>%
+  group_by(year, planning.region) %>%
+  mutate(pct.count = count / sum(count)) %>%
+  ungroup()
+
+har.pct.affiliated.ruca <- master.har.affiliation %>%
+  filter(code == 200) %>%
+  mutate(affiliated.binary = ifelse(system.affiliation == "No Affiliation", "No affiliation", "Affiliated"),
+         affiliated.binary = as.factor(affiliated.binary)) %>%
+  group_by(year, Dem_Desc, affiliated.binary) %>%
+  summarise(n()) %>%
+  ungroup() %>%
+  rename(count = 4) %>%
+  group_by(year, Dem_Desc) %>%
+  mutate(pct.count = count / sum(count)) %>%
+  ungroup()
+
+```
+
+### Planning Region
+
+### RUCA
+
+
+
