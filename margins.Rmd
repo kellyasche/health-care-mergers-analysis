@@ -1,0 +1,502 @@
+---
+title: "Margins"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+runtime: shiny
+resource_files:
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.cpg
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.dbf
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.prj
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbn
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbx
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shp.xml
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shx
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(sf)
+library(ggrepel)
+library(scales)
+library(shiny)
+library(shinycssloaders)
+library(ggiraph)
+library(kableExtra)
+library(rmapshaper)
+library(cowplot)
+library(DT)
+```
+
+```{r loading jon docs and shapefiles, cache=TRUE, include=FALSE}
+theme_bar <- theme_bw() +
+  theme(panel.grid.major = element_line(color = "grey70", size = 0.1),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_line <- theme_bw() +
+  theme(legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey70", size = 0.1),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_sf <- theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "white"),
+        panel.border = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+counties.regions <- read_csv("Data/Join docs/county_regions.csv") %>%
+  mutate(countyfp = formatC(countyfp, width = 3, flag = "0"),
+         Name = str_to_title(Name),
+         Name = str_replace(Name, "Q", "q"),
+         Name = str_replace(Name, "Of The", "of the"),
+         Dem_Desc = ifelse(Name == "Minnesota", "Minnesota", Dem_Desc),
+         Name = str_replace(Name, "Mcleod", "McLeod"),
+         planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " "))
+
+edr.pr <- counties.regions %>%
+  distinct(edr, .keep_all = TRUE) %>%
+  select(5,6) %>%
+  mutate(edr = str_replace(edr, "  ", " "),
+         planning.region = str_replace(planning.region, " Minnesota", ""))
+
+color.ruca <- c("Entirely rural" = "#5CA81F", "Town/rural mix" = "#C7EF99", "Urban/town/rural mix" = "#d8b365", "Entirely urban" = "#a6611a", "Minnesota" = "black")
+
+color.pr <- c("Northwest" = "#810f7c","Northeast" = "#fe9929", "Central" = "#076324", "Seven County Mpls-St Paul" = "#d8b365", "Southwest" = "#1f78b4", "Southeast" = "#d7301f", "Minnesota" = "black")
+
+color.edr <- c("EDR 1 - Northwest" = "#b3cde3", "EDR 2 - Headwaters" = "#8c96c6", "EDR 3 - Arrowhead" = "#fe9929", "EDR 4 - West Central" = "#8856a7", "EDR 5 - North Central" = "#810f7c", "EDR 6E- Southwest Central" = "#e5f5f9", "EDR 6W- Upper Minnesota Valley" = "#bdc9e1", "EDR 7E- East Central" = "#99d8c9", "EDR 7W- Central" = "#2ca25f", "EDR 8 - Southwest" = "#74a9cf", "EDR 9 - South Central" = "#0570b0", "EDR 10 - Southeast" = "#d7301f", "EDR 11 - 7 County Twin Cities" = "#d8b365", "Minnesota" = "black")
+
+color.counties <- scale_color_brewer(palette = "Dark2",
+                       guide = guide_legend(ncol = 3))
+
+mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp", quiet = TRUE) %>%
+  ms_simplify(keep = .01, keep_shapes = TRUE)
+```
+
+```{r prep master file, include=FALSE}
+master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
+  filter(STCD == "MN") %>%
+  mutate(CAH = "yes",
+         CITY = str_to_upper(CITY))
+
+master.har <- read_csv("Data/HAR/Master-har.csv") %>%
+  rename(year = rpt_year) %>%
+  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " ")) %>%
+  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+
+```
+
+# Margins of all hospitals
+
+Below is a list of each hospital's 2017 total revenue, net income/loss, and their margin. 
+
+<br>
+
+```{r prep 2017 margin table for each hospital, include = FALSE}
+har.margin.2017.table <- master.har %>%
+  filter(code %in% c(250, 200),
+         year == 2017) %>%
+  mutate(code = ifelse(code == 200, "net.income", "total.revenue"),
+         value = as.numeric(value),
+         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH")) %>%
+  spread(key = code, value = value) %>%
+  select(3,4,5,8,10,11,13,12) %>%
+  mutate(Margins = net.income/total.revenue)
+```
+
+```{r table of 2017 margins for each hospital}
+datatable(har.margin.2017.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
+          options = list(scrollX = TRUE)) %>%
+  formatStyle("Margins",
+              target = "row",
+              backgroundColor = styleInterval(c(-1, 0), c("red", "red", "transparent"))) %>%
+  formatCurrency(7:8, "$") %>%
+  formatPercentage(9)
+
+```
+
+<br>
+
+# Analysis of margins of all hospitals by regions
+
+Since 4% is considered a healthy margin for a hospital, it's important to see how many hospitals fall below that value.
+
+<br>
+
+## 2017 margins {.tabset}
+
+Not suprisingly, given the number of hospitals that recorded a net loss in Southwest Minnesota for 2017, that region also has the highest number and percentage of hospitals that fall below the 4% margin threshold. Northeast also has a significanlty high number of hospitals below the threshold.
+
+Even more telling is the RUCA chart. This psoitively shows that hospitals operating outside of our most urban counties are significantly more likely to have margins below the 4% threshold. Nearly 70% of the hospitals in entirely rural areas are below the threshold, while nearly half of the hospitals are below the threshold in the other non-entirely urban counties.
+
+<br>
+
+```{r prep margins for each hospital, include = FALSE}
+har.margins <- master.har %>%
+  filter(code %in% c(200, 250)) %>%
+  mutate(code = ifelse(code == 200, "income.loss", "total.revenue"),
+         value = as.numeric(value),
+         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH")) %>%
+  spread(key = code, value = value) %>%
+  mutate(margins = income.loss / total.revenue,
+         `Hospital Name` = str_replace(`Hospital Name`, "'", ""),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"),
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"))
+
+har.margins.threshold.pr <- har.margins %>%
+  mutate(below.threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(planning.region, year) %>%
+  summarise(below.threshold = sum(below.threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold / total.n)
+
+har.margins.threshold.ruca <- har.margins %>%
+  mutate(below.threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(Dem_Desc, year) %>%
+  summarise(below.threshold = sum(below.threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold / total.n)
+  
+```
+
+```{r prep average margins, include = FALSE}
+har.margins.avg.pr <- har.margins %>%
+  group_by(year, planning.region) %>%
+  summarise(avg.margins = mean(margins, na.rm = TRUE)) %>%
+  ungroup()
+
+har.margins.avg.ruca <- har.margins %>%
+  group_by(year, Dem_Desc) %>%
+  summarise(avg.margins = mean(margins, na.rm = TRUE)) %>%
+  ungroup()
+```
+
+### Planning Region
+
+<br>
+
+```{r chart margins points pr}
+
+har.margins.pr.plot <- ggplot(filter(har.margins, year == 2017), aes(planning.region, margins, color = planning.region)) +
+        geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(planning.region, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income: ", dollar(income.loss), "\nMargin: ", percent(margins), sep = ""))) +
+          geom_label(data = filter(har.margins.threshold.pr, year == 2017), size = 3, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
+          geom_label(data = filter(har.margins.avg.pr, year == 2017), aes(x = planning.region, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
+          geom_hline(yintercept = 0.04, color = "black") +
+        labs(x="", y = "", color="", title = "Margins for each hospital in 2017")+
+        scale_y_continuous(labels=scales::percent,
+                           limits = c(-.4, .45))+
+        theme_line+
+        scale_color_manual(values= color.pr,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom",
+              axis.text.x = element_text(angle = 45, hjust = .9))
+        
+girafe( ggobj = har.margins.pr.plot, width_svg = 8, height_svg = 6) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+
+
+```
+
+### RUCA
+
+<br>
+
+```{r chart margins points ruca}
+har.margins.ruca.plot <- ggplot(filter(har.margins, year == 2017), aes(Dem_Desc, margins, color = Dem_Desc)) +
+        geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(Dem_Desc, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income: ", dollar(income.loss), "\nMargin: ", percent(margins), sep = ""))) +
+          geom_label(data = filter(har.margins.threshold.ruca, year == 2017), size = 3, show.legend = FALSE, aes(x = Dem_Desc, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
+          geom_label(data = filter(har.margins.avg.ruca, year == 2017), aes(x = Dem_Desc, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
+          geom_hline(yintercept = 0.04, color = "black") +
+        labs(x="", y = "", color="", title = "Margins for each hospital in 2017")+
+        scale_y_continuous(labels=scales::percent,
+                           limits = c(-.4, .3))+
+        theme_line+
+        scale_color_manual(values= color.ruca,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom")
+        
+girafe( ggobj = har.margins.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+```
+
+<br>
+
+## Percent of hospitals with margins below 4% {.tabset}
+
+Now it's worth seeing if the number of hospitals experiencing these low margins are typical on any given year.
+
+For the most part, the percentage of hospitals that have margins below 4% is staying relatively consistent. The Seven County metro has experienced a slight uptick while the Northwest has had a significant decrease in their percentage.
+
+The RUCA chart shows that entirely urban counties have experienced a slight uptick while the entirely rural counties have experienced a slight down tick in their percentage. 
+
+<br>
+
+```{r prep margin trends, include = FALSE}
+har.margins.trend.pr <- har.margins %>%
+  mutate(below.threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(planning.region, year) %>%
+  summarise(below.threshold.n = sum(below.threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold.n / total.n)
+
+har.margins.trend.ruca <- har.margins %>%
+  mutate(below.threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(Dem_Desc, year) %>%
+  summarise(below.threshold.n = sum(below.threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold.n / total.n)
+
+```
+
+### Planning Region
+
+<br>
+
+```{r chart har margin trends pr}
+
+har.margins.trend.pr.plot <- ggplot(har.margins.trend.pr, aes(year, pct.below.threshold, color = planning.region)) +
+        geom_line(size = 2) +
+        geom_point_interactive(size = 3, aes(data_id = pct.below.threshold, tooltip = paste(planning.region, "\nYear: ", year, "\nNumber of hospitals: ", total.n, "\nNumber with margins below 4%: ", below.threshold.n, "\nPercent of hospitals below threshold: ", percent(pct.below.threshold), sep = ""))) +
+        labs(x="", y = "", color="", title = "Percent of hospitals with margins below 4%")+
+        scale_y_continuous(labels=scales::percent)+
+        scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+        theme_line+
+        scale_color_manual(values= color.pr,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom")
+        
+girafe( ggobj = har.margins.trend.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+
+```
+
+### RUCA
+
+<br>
+
+```{r charts har margin trends ruca}
+
+har.margins.trend.ruca.plot <- ggplot(har.margins.trend.ruca, aes(year, pct.below.threshold, color = Dem_Desc)) +
+        geom_line(size = 2) +
+        geom_point_interactive(size = 3, aes(data_id = pct.below.threshold, tooltip = paste(Dem_Desc, "\nYear: ", year, "\nNumber of hospitals: ", total.n, "\nNumber with margins below 4%: ", below.threshold.n, "\nPercent of hospitals below threshold: ", percent(pct.below.threshold), sep = ""))) +
+        labs(x="", y = "", color="", title = "Percent of hospitals with margins below 4%")+
+        scale_y_continuous(labels=scales::percent)+
+        scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+        theme_line+
+        scale_color_manual(values= color.ruca,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom")
+        
+girafe( ggobj = har.margins.trend.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+<br>
+
+# Analysis of margins of CAH hospitals by regions
+
+This section examines whether there are any differences in margins between CAH and regular hospitals.
+
+<br>
+
+## 2017 individual hospitals {.tabset}
+
+The charts below provide the margins for each hospital grouped by region and RUCA county group. The red points are CAHs. 
+
+Again, not a lot of conclusive evidence that CAH designation impacts financial health. If anything, these charts show that the degree at which a hospital is located in a rural area is more influential in financial health. The RUCA chart shows this by seeing that there are just larger percentages of hospitals as a whole that are reporting less than 4% margins in non-entirely urban counties.
+
+<br>
+
+```{r prep margins of hospitals with CAH identified in red, include = FALSE}
+har.cah.margins.threshold.pr <- har.margins %>%
+  mutate(threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(year, planning.region, CAH) %>%
+  summarise(below.threshold = sum(threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold / total.n)
+
+har.cah.margins.threshold.ruca <- har.margins %>%
+  mutate(threshold = ifelse(margins < .04, 1, 0)) %>%
+  group_by(year, Dem_Desc, CAH) %>%
+  summarise(below.threshold = sum(threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.below.threshold = below.threshold / total.n)
+
+
+```
+
+### Planning Region
+
+<br>
+
+```{r chart margins of hospitals with CAH pr}
+
+har.margins.cah.pr.plot <- ggplot(filter(har.margins, year == 2017), aes(planning.region, margins, color = CAH)) +
+    geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(planning.region, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income/loss: ", dollar(income.loss), "\nMargins: ", percent(margins), sep = ""))) +
+    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste("CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    geom_hline(yintercept = 0.04, color = "black") +
+    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .3, label = paste("Non-CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    labs(x="", y = "", color="", title = "Margins of each hospital - CAHs identified in red")+
+    scale_y_continuous(labels=scales::percent,
+                       limits = c(-.4, .4))+
+    theme_line+
+    scale_color_manual(values= c("red", "black"),
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 45, hjust = .9))
+  
+girafe( ggobj = har.margins.cah.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+
+
+```
+
+### RUCA
+
+<br>
+
+```{r chart margins of hospitals with CAH ruca}
+har.margins.cah.ruca.plot <- ggplot(filter(har.margins, year == 2017), aes(Dem_Desc, margins, color = CAH)) +
+    geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(Dem_Desc, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income/loss: ", dollar(income.loss), "\nMargins: ", percent(margins), sep = ""))) +
+    geom_label(data = filter(har.cah.margins.threshold.ruca, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = -.3, label = paste("CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    geom_hline(yintercept = 0.04, color = "black") +
+    geom_label(data = filter(har.cah.margins.threshold.ruca, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .3, label = paste("Non-CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    labs(x="", y = "", color="", title = "Margins of each hospital - CAHs identified in red")+
+    scale_y_continuous(labels=scales::percent)+
+    theme_line+
+    scale_color_manual(values= c("red", "black"),
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom")
+
+girafe( ggobj = har.margins.cah.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+
+```
+
+<br>
+
+## Averages between CAH and non-CAH margins {.tabset}
+
+The charts below provide the boxplots for the hospitals grouped by CAH and non-CAH in each region.
+
+Similar to the previous charts, most of the planning regions don't experience significant differences in margins when comparing their CAH with the non-CAH. The exception is Southwest where non-CAHs have significantly lower margins than their CAHs. 
+
+However, that changes a bit when we look at these numbers within RUCA groups. The chart shows that as a county becomes more rural, it's more likely that the non-CAHs average significantly lower margins than the CAHs. In fact, the averages are nearly twice as high in the CAHs than the non-CAHS. 
+The entirely rural county group doesn't have any non-CAHs, but it's worth mentioning that the averages and medians are below the 4% threshold. 
+
+<br>
+
+```{r prep margins har and cah avg, include = FALSE}
+har.cah.margins.avg.pr <- har.margins %>%
+  group_by(year, planning.region, CAH) %>%
+  summarise(mean.margins = mean(margins, na.rm = TRUE),
+            median.margins = median(margins, na.rm = TRUE)) %>%
+  ungroup()
+
+har.cah.margins.avg.ruca <- har.margins %>%
+  group_by(year, Dem_Desc, CAH) %>%
+  summarise(mean.margins = mean(margins, na.rm = TRUE),
+            median.margins = median(margins, na.rm = TRUE)) %>%
+  ungroup()
+
+```
+
+### Planning Regions
+
+<br>
+
+```{r charts margins and cah boxplots pr}
+har.margins.cah.box.pr.plot <- ggplot(har.margins, aes(planning.region, margins, color = CAH)) +
+      geom_boxplot_interactive() +
+      labs(x="", y = "", color="", title = "Boxplot of margins between CAH and regular hospitals in reach region")+
+      geom_label(data = filter(har.cah.margins.avg.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -.5, label = paste(CAH, " margins", "\nMean: ", percent(mean.margins), "\nMedian: ", percent(median.margins)))) +
+      geom_label(data = filter(har.cah.margins.avg.pr, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .5, label = paste(CAH, " margins", "\nMean: ", percent(mean.margins), "\nMedian: ", percent(median.margins)))) +
+      geom_hline(yintercept = .04, color = "black") +
+      scale_y_continuous(labels=scales::percent)+
+      theme_line+
+      scale_color_manual(values= c("red", "black"),
+                         guide = guide_legend(ncol = 3)) +
+      theme(legend.position = "bottom",
+            axis.text.x = element_text(angle = 45, hjust = .9))
+    
+girafe( ggobj = har.margins.cah.box.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))    
+
+```
+
+### RUCA
+
+<br>
+
+```{r charts margins and cah boxplots ruca}
+har.margins.cah.box.ruca.plot <- ggplot(har.margins, aes(Dem_Desc, margins, color = CAH)) +
+      geom_boxplot_interactive() +
+      labs(x="", y = "", color="", title = "Boxplot of margins between CAH and regular hospitals in reach region")+
+      geom_label(data = filter(har.cah.margins.avg.ruca, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = -.5, label = paste(CAH, " margins", "\nMean: ", percent(mean.margins), "\nMedian: ", percent(median.margins)))) +
+      geom_label(data = filter(har.cah.margins.avg.ruca, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .5, label = paste(CAH, " margins", "\nMean: ", percent(mean.margins), "\nMedian: ", percent(median.margins)))) +
+      geom_hline(yintercept = .04, color = "black") +
+      scale_y_continuous(labels=scales::percent)+
+      theme_line+
+      scale_color_manual(values= c("red", "black"),
+                         guide = guide_legend(ncol = 3)) +
+      theme(legend.position = "bottom")
+    
+girafe( ggobj = har.margins.cah.box.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                   opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))  
+```

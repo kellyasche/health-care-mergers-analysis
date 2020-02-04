@@ -1,0 +1,505 @@
+---
+title: "Net income"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+runtime: shiny
+resource_files:
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.cpg
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.dbf
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.prj
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbn
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbx
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shp.xml
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(sf)
+library(ggrepel)
+library(scales)
+library(shiny)
+library(shinycssloaders)
+library(ggiraph)
+library(kableExtra)
+library(rmapshaper)
+library(cowplot)
+library(DT)
+```
+
+```{r loading jon docs and shapefiles, cache=TRUE, include=FALSE}
+theme_bar <- theme_bw() +
+  theme(panel.grid.major = element_line(color = "grey70", size = 0.1),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_line <- theme_bw() +
+  theme(legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey70", size = 0.1),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_sf <- theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "white"),
+        panel.border = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+counties.regions <- read_csv("Data/Join docs/county_regions.csv") %>%
+  mutate(countyfp = formatC(countyfp, width = 3, flag = "0"),
+         Name = str_to_title(Name),
+         Name = str_replace(Name, "Q", "q"),
+         Name = str_replace(Name, "Of The", "of the"),
+         Dem_Desc = ifelse(Name == "Minnesota", "Minnesota", Dem_Desc),
+         Name = str_replace(Name, "Mcleod", "McLeod"),
+         planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " "))
+
+edr.pr <- counties.regions %>%
+  distinct(edr, .keep_all = TRUE) %>%
+  select(5,6) %>%
+  mutate(edr = str_replace(edr, "  ", " "),
+         planning.region = str_replace(planning.region, " Minnesota", ""))
+
+color.ruca <- c("Entirely rural" = "#5CA81F", "Town/rural mix" = "#C7EF99", "Urban/town/rural mix" = "#d8b365", "Entirely urban" = "#a6611a", "Minnesota" = "black")
+
+color.pr <- c("Northwest" = "#810f7c","Northeast" = "#fe9929", "Central" = "#076324", "Seven County Mpls-St Paul" = "#d8b365", "Southwest" = "#1f78b4", "Southeast" = "#d7301f", "Minnesota" = "black")
+
+color.edr <- c("EDR 1 - Northwest" = "#b3cde3", "EDR 2 - Headwaters" = "#8c96c6", "EDR 3 - Arrowhead" = "#fe9929", "EDR 4 - West Central" = "#8856a7", "EDR 5 - North Central" = "#810f7c", "EDR 6E- Southwest Central" = "#e5f5f9", "EDR 6W- Upper Minnesota Valley" = "#bdc9e1", "EDR 7E- East Central" = "#99d8c9", "EDR 7W- Central" = "#2ca25f", "EDR 8 - Southwest" = "#74a9cf", "EDR 9 - South Central" = "#0570b0", "EDR 10 - Southeast" = "#d7301f", "EDR 11 - 7 County Twin Cities" = "#d8b365", "Minnesota" = "black")
+
+color.counties <- scale_color_brewer(palette = "Dark2",
+                       guide = guide_legend(ncol = 3))
+
+mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp", quiet = TRUE) %>%
+  ms_simplify(keep = .01, keep_shapes = TRUE)
+```
+
+```{r prep master file, include=FALSE}
+master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
+  filter(STCD == "MN") %>%
+  mutate(CAH = "yes",
+         CITY = str_to_upper(CITY))
+
+master.har <- read_csv("Data/HAR/Master-har.csv") %>%
+  rename(year = rpt_year) %>%
+  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " ")) %>%
+  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+
+```
+
+<br>
+
+# Revenue and expenses for each hospital
+
+The table below provides the 2017 total revenue, total expanses and the income or loss for each hospital in Minnesota. Hospitals highlighted in red reported a net loss.
+
+It's worth looking at the immense revenue and income accrued by the Mayo hospital in Rochester. After expenses, the hospital made over $656 million dollars in 2017.
+
+Some hospitals won't have any data attached to them due to the low patient volume. This data has been redacted from public view.
+
+This isn't for analysis but rather just for information for someone that would want to know more about their own hospital. 
+
+<br>
+
+```{r revenue and expenses for each hospital table}
+har.inc.rev.list <- master.har %>%
+  filter(year == 2017,
+         code %in% c(250, 260, 200)) %>%
+  mutate(code = ifelse(code == 250, "total.revenue",
+                       ifelse(code == 260, "total.expenses", "income.loss")),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"),
+         value = as.numeric(value)) %>%
+  arrange(planning.region) %>%
+  select(5,3,4,6,7,12, 13) %>%
+  spread(key = code, value = value) 
+
+datatable(har.inc.rev.list, class = "cell-border stripe", filter = "top", rownames = FALSE,
+          options = list(scrollX = TRUE)) %>%
+  formatStyle("income.loss",
+              target = "row",
+              backgroundColor = styleInterval(c(-34017629, 0), c("red", "red", "transparent"))) %>%
+  formatCurrency(5:7, "$")
+
+
+```
+
+<br>
+
+# Analysis of hospital net income by region and RUCA county group
+
+Due to Mayo - Rochester's huge income that dwarfs every other hospital, the following chart leaves it out so we can better examine all the other hospitals in the state. All hospitals that have had their data redacted have also been removed from analysis.
+
+## Individual hospitals {.tabset}
+
+The charts below provide each hospital's net income (or net loss) for 2017 within each region. 
+
+The planning region chart shows significant range differences between the seven county metro and all the other regions. The seven county metro has a range of $-34 million (Children's Hospital) to $68 million for Abbot Northwestern. Outside of the St. Cloud hospital, all other regions have losses or incomes from $-6 million to $17 million in earnings. 
+
+Southwest Minnesota has the largest number with 16 hospitals (49% of the hospitals) recording a net loss in the region.
+
+Even more interesting is looking at the income and loss of hospitals broken up by rural-urban commuting area. It's much easier to see that the degree to which a hospital is rural makes a significant difference in its ability to make income. 
+
+In addition, counties considered entirely rural are most likely to have a hospital recording a net loss. Seven of their 16 hospitals recorded a net loss. The liklihood of a hospital recording a net loss decreases as a county becomes more urban.
+
+<br>
+
+```{r prep income or loss for each hospital}
+har.income.loss.box <- master.har %>%
+  filter(year == 2017,
+         code == 200,
+         hccis_id != 145) %>%
+  mutate(value = as.numeric(value),
+         `Hospital Name` = str_replace(`Hospital Name`, "'", "")) %>%
+  filter(hccis_id != 91) %>%
+  drop_na(value) %>%
+  mutate(planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"),
+         edr = fct_relevel(edr, "EDR 1 - Northwest", "EDR 2 - Headwaters", "EDR 3 - Arrowhead", "EDR 4 - West Central", "EDR 5 - North Central", "EDR 6E- Southwest Central", "EDR 6W- Upper Minnesota Valley", "EDR 7E- East Central", "EDR 7W- Central", "EDR 8 - Southwest", "EDR 9 - South Central", "EDR 10 - Southeast", "EDR 11 - 7 County Twin Cities", "Minnesota"),
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"),
+         CAH = ifelse(is.na(CAH), "Regular hospital", "CAH"))
+
+har.income.loss.threshold.pr <- har.income.loss.box %>%
+  mutate(threshold = ifelse(value < 0, 1, 0)) %>%
+  group_by(planning.region) %>%
+  summarise(net.loss = sum(threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.net.loss = net.loss / total.n)
+
+har.income.loss.threshold.ruca <- har.income.loss.box %>%
+  mutate(threshold = ifelse(value < 0, 1, 0)) %>%
+  group_by(Dem_Desc) %>%
+  summarise(net.loss = sum(threshold, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.net.loss = net.loss / total.n)
+
+```
+
+### Planning region
+
+<br>
+
+```{r chart income loss point plot pr}
+har.income.loss.box.pr.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(planning.region, value, color = planning.region)) +
+        geom_point_interactive(size = 2, aes(data_id = value, tooltip = paste(planning.region, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value))))+
+        geom_label(data = har.income.loss.threshold.pr, show.legend = FALSE, size = 3, aes(x = planning.region, y = -30000000, label = paste(net.loss, " hospitals\nwith net loss\n", percent(pct.net.loss), " of hospitals", sep = ""))) +
+        geom_hline(yintercept = 0) +
+        labs(x="", y = "", title = "Income and loss of each hospital by planning region")+
+        scale_y_continuous(labels=scales::dollar,
+                           limits = c(-50000000, 70000000))+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))+
+        scale_color_manual(values= color.pr)
+      
+girafe( ggobj = har.income.loss.box.pr.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 5))
+
+```
+
+### RUCA
+
+<br>
+
+```{r chart income loss point plot ruca}
+har.income.loss.box.ruca.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(Dem_Desc, value, color = Dem_Desc)) +
+        geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(Dem_Desc, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value))))+
+        geom_label(data = har.income.loss.threshold.ruca, show.legend = FALSE, size = 3, aes(x = Dem_Desc, y = -30000000, label = paste(net.loss, " hospitals\nwith net loss\n", percent(pct.net.loss), " of hospitals", sep = ""))) +
+        geom_hline(yintercept = 0) +
+        labs(x="", y = "", title = "Income and loss of each hospital by rura-urban commuting area")+
+        scale_y_continuous(labels=scales::dollar,
+                           limits = c(-40000000, 70000000))+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))+
+        scale_color_manual(values= color.ruca)
+      
+girafe( ggobj = har.income.loss.box.ruca.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 5))
+```
+
+## Boxplots of income and loss {.tabset}
+
+The chart below is a boxplot that provides the mean of the income loss for each region (the horizontal line within each box), the range of income or loss within 3 standard deviations from the mean, and and outliers (the dots outside of the box). 
+
+What interesting here is how much lower the range is for regions outside of the seven-county metro. 
+
+This proves that patient volume is a significant source of a hospital business model. Without the volume, it's much harder to get a significant encouraging margins.
+
+<br>
+
+### Planning region
+
+<br>
+
+```{r chart income loss boxplot pr}
+har.income.loss.box.pr.2.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(planning.region, value, color = planning.region)) +
+        geom_boxplot_interactive() +
+        geom_hline(yintercept = 0) +
+        labs(x="", y = "", title = "Income and loss of each hospital by planning region")+
+        scale_y_continuous(labels=scales::dollar)+
+        theme_bar+
+        scale_color_manual(values = color.pr) +
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))
+      
+girafe( ggobj = har.income.loss.box.pr.2.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+
+```
+
+### RUCA
+
+<br>
+
+```{r chart income loss boxplot ruca}
+
+har.income.loss.box.ruca.2.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(Dem_Desc, value, color = Dem_Desc)) +
+        geom_boxplot_interactive() +
+        geom_hline(yintercept = 0) +
+        labs(x="", y = "", title = "Income and loss of each hospital by rural-urban commuting area county group")+
+        scale_y_continuous(labels=scales::dollar)+
+        theme_bar+
+        scale_color_manual(values = color.ruca) +
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))
+      
+girafe( ggobj = har.income.loss.box.ruca.2.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 3))
+
+
+```
+
+## Percentage of hospitals with a net loss {.tabset}
+
+One thing to look at is whether 2017 is an outlier or if the number of hospitals recording a net loss in 2017 is farily typical compared to other years. 
+
+The chart below provides the percentage of hospitals with a net income loss in each region from 2014 to 2017. For the most part, each region experiences little change change in the percentage of their hospitals recording a net loss. 
+
+Our most rural regions typically have a higher percentage of hospitals that are experiencing net losses in any given year. The worst is in Southwest Minnesota where 40% to 50% of the hospitals have a net loss.
+
+Southeast experiences a lot of variation from year to year due to having so few hospitals compared to the other regions. A shift of one or two hospitals from a net income to a net loss has a big impact on their percentage. Hover over the dots to get the actual number of hospitals that recorded a net loss.
+
+Interetingly, when broken up by RUCA county groups, our most rural hospitals have seen improvements as far as the percentage of them with a net income loss. These hospitals are still most likely to have a net income loss, but it isn't as dire as I was expecting. This might give more credence to the idea that many of the CAHs are in our most rural areas and tend to do better. Lets break that down next
+
+<br>
+
+```{r prep net loss hospitals, include = FALSE}
+har.income.trends <- master.har %>%
+  filter(code == 200) %>%
+  mutate(value = as.numeric(value),
+         year = as.integer(year))
+
+har.income.trends.pr <- har.income.trends %>%
+  mutate(loss.binary = ifelse(value < 0, 1, 0)) %>%
+  group_by(year, planning.region) %>%
+  summarise(n.loss = sum(loss.binary, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.incomeloss = n.loss / total.n,
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
+
+har.income.trends.ruca <- har.income.trends %>%
+  mutate(loss.binary = ifelse(value < 0, 1, 0)) %>%
+  group_by(year, Dem_Desc) %>%
+  summarise(n.loss = sum(loss.binary, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.incomeloss = n.loss / total.n,
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"))
+
+```
+
+### Planning region
+
+<br>
+
+```{r chart net loss pr}
+har.income.trends.pr.plot <- ggplot(har.income.trends.pr, aes(year, pct.incomeloss, color = planning.region)) +
+        geom_line(size = 2) +
+        geom_point_interactive(size = 3, aes(data_id = pct.incomeloss, tooltip = paste("Planning region: ", planning.region, "\nNumber of hospitals: ", total.n, "\nNumber of hospitals with net income loss: ", n.loss, "\nPercentage of hospitals with net income loss: ", percent(pct.incomeloss), sep = ""))) +
+        labs(x="", y = "", color="", title = "Percent of hospitals with net income loss")+
+        scale_y_continuous(labels=scales::percent)+
+        scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+        theme_line+
+        scale_color_manual(values= color.pr,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom")
+        
+girafe( ggobj = har.income.trends.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+### RUCA
+
+<br>
+
+```{r chart net loss ruca}
+har.income.trends.ruca.plot <- ggplot(har.income.trends.ruca, aes(year, pct.incomeloss, color = Dem_Desc)) +
+        geom_line(size = 2) +
+        geom_point_interactive(size = 3, aes(data_id = pct.incomeloss, tooltip = paste("RUCA County group: ", Dem_Desc, "\nNumber of hospitals: ", total.n, "\nNumber of hospitals with net income loss: ", n.loss, "\nPercentage of hospitals with net income loss: ", percent(pct.incomeloss), sep = ""))) +
+        labs(x="", y = "", color="", title = "Percent of hospitals with net income loss")+
+        scale_y_continuous(labels=scales::percent)+
+        scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+        theme_line+
+        scale_color_manual(values= color.ruca,
+                           guide = guide_legend(ncol = 3)) +
+        theme(legend.position = "bottom")
+        
+girafe( ggobj = har.income.trends.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+
+<br>
+
+# Analysis of CAH hospital net income by region and ruca {.tabset}
+
+The chart below provides each hospitals net income or loss in 2017 with the CAH hospitals highlighted as red. 
+
+Most of the literature I have read indicated that non-CAH rural hospitals typically have a tougher time making income and are more likely to be doing better financially. I'm not sure that is the case in Minnesota.
+
+In nearly every region, non-CAHs are less likely to be reporting a net loss in 2017. Southwest Minnesota is the only region where that is not the case, however it's worth noting that there are only 3 non-CAHs in Soutwest MN.
+
+Interstingly, the RUCA chart shows less conclusivity. 100% of the hospitals in entirely rural counties are CAHs, so that doesn't show much. However, it's worth noting that this county group had the highest percentage of hospitals recording a net loss. Besides that, there isn't much of a gap in percentage of hospital types that seem to indicate a trend by the type of hospital. 
+
+Really, signs are pointing that rurality matters more than CAH designation. Margins may tell us something more.
+
+<br>
+
+```{r prep cah income or loss point plot, include = FALSE}
+cah.income.trends <- har.income.trends %>%
+  mutate(CAH = ifelse(is.na(CAH), "Non-CAH", "CAH"),
+         `Hospital Name` = str_replace(`Hospital Name`, "'", "")) %>%
+  filter(hccis_id != c(91, 145)) %>%
+  mutate(Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
+
+har.cah.netloss.pr <- cah.income.trends %>%
+  mutate(net.loss = ifelse(value < 0, 1, 0)) %>%
+  group_by(year, planning.region, CAH) %>%
+  summarise(net.loss = sum(net.loss, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.net.loss = net.loss / total.n)
+
+cah.income.loss.trends.pr <- cah.income.trends %>%
+  filter(year == 2017) %>%
+  mutate(net.loss.binary = ifelse(value < 0, 1, 0)) %>%
+  group_by(planning.region) %>%
+  summarise(net.loss.n = sum(net.loss.binary, na.rm = TRUE),
+            cah.net.loss.n = sum(net.loss.binary[CAH == "CAH"], na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.cah.net.loss = cah.net.loss.n / net.loss.n)
+  
+har.cah.netloss.ruca <- cah.income.trends %>%
+  mutate(net.loss = ifelse(value < 0, 1, 0)) %>%
+  group_by(year, Dem_Desc, CAH) %>%
+  summarise(net.loss = sum(net.loss, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.net.loss = net.loss / total.n)
+```
+
+## Planning region
+
+<br>
+
+```{r chart cah income or loss pr}
+
+cah.income.trends.pr.plot <- ggplot(filter(cah.income.trends, year==2017), aes(planning.region, value, color = CAH)) +
+        geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(planning.region, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value), "\n", CAH, sep = "")))+
+        geom_hline(yintercept = 0) +
+        geom_label(data = filter(har.cah.netloss.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -30000000, label = paste("CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
+        geom_label(data = filter(har.cah.netloss.pr, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = 90000000, label = paste("Non-CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
+        labs(x="", y = "", title = "Income and loss of each hospital by planning region and\nCAH status")+
+        scale_y_continuous(labels=scales::dollar,
+                           limits = c(-40000000, 100000000))+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))+
+        scale_color_manual(values= c("red", "black"))
+      
+  girafe( ggobj = cah.income.trends.pr.plot, width_svg = 7) %>%
+    girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 5))
+
+
+```
+
+## RUCA
+
+<br>
+
+```{r chart cah income or loss ruca}
+cah.income.trends.ruca.plot <- ggplot(filter(cah.income.trends, year==2017), aes(Dem_Desc, value, color = CAH)) +
+        geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(Dem_Desc, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value), "\n", CAH, sep = "")))+
+        geom_hline(yintercept = 0) +
+        geom_label(data = filter(har.cah.netloss.ruca, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = -30000000, label = paste("CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
+        geom_label(data = filter(har.cah.netloss.ruca, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = 90000000, label = paste("Non-CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
+        labs(x="", y = "", title = "Income and loss of each hospital by RUCA County Group and\nCAH status")+
+        scale_y_continuous(labels=scales::dollar)+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1))+
+        scale_color_manual(values= c("red", "black"))
+      
+girafe( ggobj = cah.income.trends.ruca.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE),
+                 opts_zoom(max = 5))
+```

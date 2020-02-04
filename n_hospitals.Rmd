@@ -1,0 +1,363 @@
+---
+title: "Number of hospitals"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+runtime: shiny
+resource_files:
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.cpg
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.dbf
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.prj
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbn
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbx
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shp.xml
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(sf)
+library(ggrepel)
+library(scales)
+library(shiny)
+library(shinycssloaders)
+library(ggiraph)
+library(kableExtra)
+library(rmapshaper)
+library(cowplot)
+library(DT)
+```
+
+```{r loading jon docs and shapefiles, cache=TRUE, include=FALSE}
+theme_bar <- theme_bw() +
+  theme(panel.grid.major = element_line(color = "grey70", size = 0.1),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        legend.title = element_blank(),
+        text = element_text(size = 15),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_line <- theme_bw() +
+  theme(legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey70", size = 0.1),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        text = element_text(size = 15),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_sf <- theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "white"),
+        panel.border = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank(),
+        text = element_text(size = 15),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+counties.regions <- read_csv("Data/Join docs/county_regions.csv") %>%
+  mutate(countyfp = formatC(countyfp, width = 3, flag = "0"),
+         Name = str_to_title(Name),
+         Name = str_replace(Name, "Q", "q"),
+         Name = str_replace(Name, "Of The", "of the"),
+         Dem_Desc = ifelse(Name == "Minnesota", "Minnesota", Dem_Desc),
+         Name = str_replace(Name, "Mcleod", "McLeod"),
+         planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " "))
+
+edr.pr <- counties.regions %>%
+  distinct(edr, .keep_all = TRUE) %>%
+  select(5,6) %>%
+  mutate(edr = str_replace(edr, "  ", " "),
+         planning.region = str_replace(planning.region, " Minnesota", ""))
+
+color.ruca <- c("Entirely rural" = "#5CA81F", "Town/rural mix" = "#C7EF99", "Urban/town/rural mix" = "#d8b365", "Entirely urban" = "#a6611a", "Minnesota" = "black")
+
+color.pr <- c("Northwest" = "#810f7c","Northeast" = "#fe9929", "Central" = "#076324", "Seven County Mpls-St Paul" = "#d8b365", "Southwest" = "#1f78b4", "Southeast" = "#d7301f", "Minnesota" = "black")
+
+color.edr <- c("EDR 1 - Northwest" = "#b3cde3", "EDR 2 - Headwaters" = "#8c96c6", "EDR 3 - Arrowhead" = "#fe9929", "EDR 4 - West Central" = "#8856a7", "EDR 5 - North Central" = "#810f7c", "EDR 6E- Southwest Central" = "#e5f5f9", "EDR 6W- Upper Minnesota Valley" = "#bdc9e1", "EDR 7E- East Central" = "#99d8c9", "EDR 7W- Central" = "#2ca25f", "EDR 8 - Southwest" = "#74a9cf", "EDR 9 - South Central" = "#0570b0", "EDR 10 - Southeast" = "#d7301f", "EDR 11 - 7 County Twin Cities" = "#d8b365", "Minnesota" = "black")
+
+color.counties <- scale_color_brewer(palette = "Dark2",
+                       guide = guide_legend(ncol = 3))
+
+mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp", quiet = TRUE) %>%
+  ms_simplify(keep = .01, keep_shapes = TRUE)
+```
+
+```{r prep master file, include=FALSE}
+master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
+  filter(STCD == "MN") %>%
+  mutate(CAH = "yes",
+         CITY = str_to_upper(CITY))
+
+master.har <- read_csv("Data/HAR/Master-har.csv") %>%
+  rename(year = rpt_year) %>%
+  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " ")) %>%
+  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+
+```
+
+<br>
+
+# Number of hospitals by regions and RUCA group {.tabset}
+
+The data are the values of each Hospital Annual Report completed by each hospital in the state. Even if a hospital systsem has multiple hospitals, each hospital must file their own annual report.
+
+Below are the number of reports filed each year by rural-urban commuting area county groups and planning region. Essentially, we will find out if there are any closures since 2014.
+
+The number of hospitals in each region is pretty fascinating. The SE region only has 11 hospitals, which is about half of SE, NW, and the metro. It would be interesting to see why this is. Perhaps there are larger hospital systems that aren't reporting for each site? I don't think that's the case though.
+
+On the flip side, the number of hospitals has stayed constant. This is a pretty short period of time to measure so I wouldn't expect anything to drastic. 
+
+<br>
+
+```{r prep n hospitals, include=FALSE}
+har.n <- master.har %>%
+  filter(code == 250)
+
+har.n.ruca <- har.n %>%
+  group_by(Dem_Desc, year) %>%
+  summarise(n.reports = n()) %>%
+  ungroup() %>%
+  group_by(year) %>%
+  mutate(data_id = as.character(seq(n()))) %>%
+  ungroup() %>%
+  mutate(Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban")) %>%
+  arrange(Dem_Desc)
+
+har.n.pr <- har.n %>%
+  group_by(planning.region, year) %>%
+  summarise(n.reports = n()) %>%
+  ungroup() %>%
+  mutate(planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
+
+har.n.edr <- har.n %>%
+  group_by(edr, planning.region, year) %>%
+  summarise(n.reports = n()) %>%
+  ungroup() %>%
+  mutate(edr = fct_relevel(edr, "EDR 1 - Northwest", "EDR 2 - Headwaters", "EDR 3 - Arrowhead", "EDR 4 - West Central", "EDR 5 - North Central", "EDR 6E- Southwest Central", "EDR 6W- Upper Minnesota Valley", "EDR 7E- East Central", "EDR 7W- Central", "EDR 8 - Southwest", "EDR 9 - South Central", "EDR 10 - Southeast", "EDR 11 - 7 County Twin Cities", "Minnesota"))
+
+```
+
+## Planning region
+
+<br>
+
+```{r chart n hospitals pr}
+har.n.pr.plot <- ggplot(har.n.pr, aes(year, n.reports, color = planning.region)) +
+  geom_line( size = 2) +
+  geom_text(aes(label = n.reports), color = "black") +
+  labs(x="", y = "", color="", title = "Number of Hospital Annual Reports filed by planning region")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 1)) +
+  theme_line+
+  scale_color_manual(values= color.pr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+  
+
+girafe(ggobj = har.n.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+      
+
+```
+
+## EDR
+
+```{r chart n hospitals edr, fig.height=9}
+har.n.edr.plot <- ggplot(har.n.edr, aes(year, n.reports, color = edr)) +
+    geom_line( size = 2) +
+    geom_text(size = 3, aes(label = n.reports), color = "black") +
+    facet_wrap(~planning.region, ncol = 2) +
+    labs(x="", y = "", color="", title = "Number of Hospital Annual Reports filed by economic development region")+
+    scale_y_continuous(labels=scales::comma)+
+    scale_x_continuous(breaks = seq(1900, 2050, 1)) +
+    theme_line+
+    scale_color_manual(values= color.edr,
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom",
+          strip.background = element_blank(),
+          text = element_text(size = 10))
+
+girafe( ggobj = har.n.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+## RUCA
+
+```{r chart n hospitals ruca}
+har.n.ruca.plot <- ggplot(har.n.ruca, aes(year, n.reports, color = Dem_Desc)) +
+    geom_line( size = 2) +
+    geom_text(aes(label = n.reports), color = "black") +
+    labs(x="", y = "", color="", title = "Number of Hospital Annual Reports filed by ruca group")+
+    scale_y_continuous(labels=scales::comma)+
+    scale_x_continuous(breaks = seq(1900, 2050, 1)) +
+    theme_line+
+    scale_color_manual(values= color.ruca,
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom")
+    
+girafe( ggobj = har.n.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+<br>
+
+# Number of Critical Access Hospitals {.tabset}
+
+Here's the number of CAHs broken down by planning region and RUCA County groups arranged from the highest number of CAHs to the lowest.
+
+The Southwest region has the highest number of CAHs in it with 30. It also has the highest percentage of it's hospitals designated as CAHs with 91%.
+
+When split up by RUCA county group, the town/rural mix county group has the highest number of CAHs with 36. However, our entirely rural counties have the highest percentage with all 16 designated as CAHs.
+
+<br>
+
+```{r prep number and percentage of CAHs by pr and ruca, include = FALSE}
+cah.n <- master.har %>%
+  filter(code == 200,
+         year == 2017) %>%
+  mutate(CAH = ifelse(is.na(CAH), 0, 1))
+
+cah.n.pr <- cah.n %>%
+  group_by(planning.region) %>%
+  summarise(cah.n = sum(CAH, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.cah = cah.n / total.n,
+         data_id = as.character(seq(pct.cah)),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
+
+cah.n.table.pr <- cah.n.pr %>%
+  arrange(desc(cah.n)) %>%
+  select(1,3,2,4) %>%
+  mutate(pct.cah = percent(pct.cah)) %>%
+  rename(`Planning Region` = 1,
+         `Number of hospitals` = 2,
+         `Number of Critical Access Hospitals` = 3,
+         `Percentage of hospitals CAH` = 4)
+
+cah.n.ruca <- cah.n %>%
+  group_by(Dem_Desc) %>%
+  summarise(cah.n = sum(CAH, na.rm = TRUE),
+            total.n = n()) %>%
+  ungroup() %>%
+  mutate(pct.cah = cah.n / total.n,
+         data_id = as.character(seq(pct.cah)),
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"))
+
+cah.n.table.ruca <- cah.n.ruca %>%
+  arrange(desc(cah.n)) %>%
+  select(1,3,2,4) %>%
+  mutate(pct.cah = percent(pct.cah)) %>%
+  rename(`RUCA County Group` = 1,
+         `Number of hospitals` = 2,
+         `Number of Critical Access Hospitals` = 3,
+         `Percentage of hospitals CAH` = 4)
+
+```
+
+## Planning region
+
+<br>
+
+```{r table cahs by pr}
+
+datatable(cah.n.table.pr, rownames = FALSE)
+
+```
+
+<br>
+
+```{r chart cahs by pr}
+
+cah.n.pr.plot <- ggplot(cah.n.pr, aes(planning.region, pct.cah, fill = planning.region)) +
+        geom_bar_interactive(stat = "identity", position = "dodge", aes(data_id = data_id, tooltip = paste("Planning Region: ", planning.region, "\nNumber of hospitals: ", total.n, "\nNumber of Critical Access Hospitals: ", cah.n, "\nPercentage of hospitals that are critical access: ", percent(pct.cah), sep = "")))+
+        geom_label(aes(label = percent(pct.cah)), show.legend = FALSE) +
+        labs(x="", y = "", title = "Percentage of hospitals that are Critical Access Hospitals")+
+        scale_y_continuous(labels=scales::percent)+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              text = element_text(size = 10))+
+        scale_fill_manual(values=color.pr)
+      
+girafe( ggobj = cah.n.pr.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+
+
+```
+
+## RUCA
+
+<br>
+```{r table cahs by ruca}
+
+datatable(cah.n.table.ruca, rownames = FALSE)
+
+```
+
+<br>
+
+```{r chart cahs by ruca}
+
+cah.n.ruca.plot <- ggplot(cah.n.ruca, aes(Dem_Desc, pct.cah, fill = Dem_Desc)) +
+        geom_bar_interactive(stat = "identity", position = "dodge", aes(data_id = data_id, tooltip = paste("RUCA ", Dem_Desc, "\nNumber of hospitals: ", total.n, "\nNumber of Critical Access Hospitals: ", cah.n, "\nPercentage of hospitals that are critical access: ", percent(pct.cah), sep = "")))+
+        geom_label(aes(label = percent(pct.cah)), show.legend = FALSE) +
+        labs(x="", y = "", title = "Percentage of hospitals that are Critical Access Hospitals")+
+        scale_y_continuous(labels=scales::percent)+
+        theme_bar+
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              text = element_text(size = 12))+
+        scale_fill_manual(values=color.ruca)
+      
+girafe( ggobj = cah.n.ruca.plot, width_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+<br>
+
+In case anyone is interested, here is the complete list of all the CAHs in Minnesota.
+
+<br>
+
+```{r prep list of CAHs}
+cah.list <- master.har %>%
+  filter(code == 200,
+         CAH == "yes") %>%
+  distinct(`Hospital Name`, .keep_all = TRUE) %>%
+  select(5,6,7)
+
+datatable(cah.list, filter = "top", rownames = FALSE)
+  
+```

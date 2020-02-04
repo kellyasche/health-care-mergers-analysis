@@ -1,0 +1,246 @@
+---
+title: "Admissions"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+runtime: shiny
+resource_files:
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.cpg
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.dbf
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.prj
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbn
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbx
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shp.xml
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(sf)
+library(ggrepel)
+library(scales)
+library(shiny)
+library(shinycssloaders)
+library(ggiraph)
+library(kableExtra)
+library(rmapshaper)
+library(cowplot)
+library(DT)
+```
+
+```{r loading jon docs and shapefiles, cache=TRUE, include=FALSE}
+theme_bar <- theme_bw() +
+  theme(panel.grid.major = element_line(color = "grey70", size = 0.1),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_line <- theme_bw() +
+  theme(legend.background = element_rect(fill = "transparent", color = "transparent"),
+        legend.key = element_rect(fill = "transparent"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "grey70", size = 0.1),
+        axis.ticks = element_blank(),
+        axis.text = element_text(face = "bold"),
+        panel.border = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+theme_sf <- theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "white"),
+        panel.border = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.title = element_blank(),
+        text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, face = "italic"),
+        legend.text = element_text(margin = margin(l = 2, r = 5)))
+
+counties.regions <- read_csv("Data/Join docs/county_regions.csv") %>%
+  mutate(countyfp = formatC(countyfp, width = 3, flag = "0"),
+         Name = str_to_title(Name),
+         Name = str_replace(Name, "Q", "q"),
+         Name = str_replace(Name, "Of The", "of the"),
+         Dem_Desc = ifelse(Name == "Minnesota", "Minnesota", Dem_Desc),
+         Name = str_replace(Name, "Mcleod", "McLeod"),
+         planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " "))
+
+edr.pr <- counties.regions %>%
+  distinct(edr, .keep_all = TRUE) %>%
+  select(5,6) %>%
+  mutate(edr = str_replace(edr, "  ", " "),
+         planning.region = str_replace(planning.region, " Minnesota", ""))
+
+color.ruca <- c("Entirely rural" = "#5CA81F", "Town/rural mix" = "#C7EF99", "Urban/town/rural mix" = "#d8b365", "Entirely urban" = "#a6611a", "Minnesota" = "black")
+
+color.pr <- c("Northwest" = "#810f7c","Northeast" = "#fe9929", "Central" = "#076324", "Seven County Mpls-St Paul" = "#d8b365", "Southwest" = "#1f78b4", "Southeast" = "#d7301f", "Minnesota" = "black")
+
+color.edr <- c("EDR 1 - Northwest" = "#b3cde3", "EDR 2 - Headwaters" = "#8c96c6", "EDR 3 - Arrowhead" = "#fe9929", "EDR 4 - West Central" = "#8856a7", "EDR 5 - North Central" = "#810f7c", "EDR 6E- Southwest Central" = "#e5f5f9", "EDR 6W- Upper Minnesota Valley" = "#bdc9e1", "EDR 7E- East Central" = "#99d8c9", "EDR 7W- Central" = "#2ca25f", "EDR 8 - Southwest" = "#74a9cf", "EDR 9 - South Central" = "#0570b0", "EDR 10 - Southeast" = "#d7301f", "EDR 11 - 7 County Twin Cities" = "#d8b365", "Minnesota" = "black")
+
+color.counties <- scale_color_brewer(palette = "Dark2",
+                       guide = guide_legend(ncol = 3))
+
+mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp", quiet = TRUE) %>%
+  ms_simplify(keep = .01, keep_shapes = TRUE)
+```
+
+```{r prep master file, include=FALSE}
+master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
+  filter(STCD == "MN") %>%
+  mutate(CAH = "yes",
+         CITY = str_to_upper(CITY))
+
+master.har <- read_csv("Data/HAR/Master-har.csv") %>%
+  rename(year = rpt_year) %>%
+  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
+         edr = str_replace(edr, "  ", " ")) %>%
+  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+
+```
+
+<br>
+
+# Admissions by patients on public insurance program for each hospital in 2017
+
+The following data analyzes acute care admissions by the primary payer. This should give us some some further evidence into what type of payer hospitals rely on and that there are significant differences dependent on how urban or rural a hospital is.
+
+The primary payer types included are;
+
+* total medicare admissions (code 4370)
+
+* total MA/PMAP admissions (code 4373)
+
+* total MNCare admissions (code 4376)
+
+* total commercial, nonprofit health plans, private admissions (code 4379)
+
+The total acute admissions code is 4340
+
+The table below provides the percentage of admissions by patients that are on one of the identifed public progams listed above.
+
+<br>
+
+```{r prep admissions public program, include = FALSE}
+har.admissions.payer <- master.har %>%
+  filter(code %in% c(4370, 4373, 4376, 4379, 4340 ),
+         hccis_id != 145) %>%
+  mutate(value = as.numeric(value),
+         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH"),
+         code = ifelse(code == 4370, "medicare.admissions",
+                       ifelse(code == 4373, "ma.admissions",
+                              ifelse(code == 4376, "mncare.admissions",
+                                     ifelse(code == 4379, "commercial.admissions", "total.admissions")))))
+
+har.admissions.public.payer <- har.admissions.payer %>%
+  group_by(hccis_id, `Hospital Name`, City, CAH,year, planning.region, Dem_Desc) %>%
+  summarise(public.payer.admissions = sum(value[code %in% c("medicare.admissions", "ma.admissions", "mncare.admissions")], na.rm = TRUE),
+            total.admissions = sum(value[code == "total.admissions"], na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(pct.public.payer.admissions = public.payer.admissions / total.admissions,
+         `Hospital Name` = str_replace(`Hospital Name`, "'", ""),
+         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"),
+         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
+```
+
+```{r table public payer admissions}
+har.admissions.public.payer.table <- har.admissions.public.payer %>%
+  filter(year == 2017) %>%
+  select(2,3,4,6,7,8,9,10)
+
+datatable(har.admissions.public.payer.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
+          options = list(scrollX = TRUE)) %>%
+  formatPercentage(8)
+
+```
+
+<br>
+
+# Analysis of admissions by public payer patients by region and RUCA {.tabset}
+
+The charts here show total admissions of all the hospitals in each region.
+
+The differences in admissions is very clear. Regions outside of the seven county metro had the highest percentages. Hospitals in the Southwest region had an average of nearly 80% of their admissions from patients who were on a public insurance program. It was 60% for hospitals in the seven-county metro.
+
+Again, the RUCA groups really shows the difference rurality has on the percentages. In 2017, 86% of the patients admitted to hospitals in our most rural counties were on a public program compared to 61% of patients in entirely urban hospitals.
+
+<br>
+
+```{r prep percent of admissions by public payer avg, include = FALSE}
+har.admissions.public.payer.avg.pr <- har.admissions.public.payer %>%
+  group_by(planning.region, year) %>%
+  summarise(mean.public.payer.pct = mean(pct.public.payer.admissions),
+            median.public.payer.pct = median(pct.public.payer.admissions)) %>%
+  ungroup()
+
+har.admissions.public.payer.avg.ruca <- har.admissions.public.payer %>%
+  group_by(Dem_Desc, year) %>%
+  summarise(mean.public.payer.pct = mean(pct.public.payer.admissions),
+            median.public.payer.pct = median(pct.public.payer.admissions)) %>%
+  ungroup()
+
+
+```
+
+## Planning Regions
+
+<br>
+
+```{r chart admissions by public payer for pr}
+har.admissions.public.payer.pr.plot <- ggplot(filter(har.admissions.public.payer, year == 2017), aes(planning.region, pct.public.payer.admissions, color = planning.region)) +
+    geom_point_interactive(size = 3, aes(data_id = pct.public.payer.admissions, tooltip = paste(planning.region, "\n", `Hospital Name`, ", ", CAH, "\nTotal admissions: ", total.admissions, "\nPublic payer admissions: ", public.payer.admissions, "\nPercent public payer admissions: ", percent(pct.public.payer.admissions), sep = ""))) +
+    geom_label(data = filter(har.admissions.public.payer.avg.pr, year == 2017), size = 2, show.legend = FALSE, aes(x = planning.region, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
+    labs(x="", y = "", color="", title = "Percent of admissions by public payer patients for each hospital")+
+    scale_y_continuous(labels=scales::percent)+
+    theme_line+
+    scale_color_manual(values= color.pr,
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 45, hjust = .9))
+  
+
+girafe( ggobj = har.admissions.public.payer.pr.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+## RUCA
+
+<br>
+
+```{r chart admissions by public payer for ruca}
+har.admissions.public.payer.ruca.plot <- ggplot(filter(har.admissions.public.payer, year == 2017), aes(Dem_Desc, pct.public.payer.admissions, color = Dem_Desc)) +
+    geom_point_interactive(size = 3, aes(data_id = pct.public.payer.admissions, tooltip = paste(Dem_Desc, "\n", `Hospital Name`, ", ", CAH, "\nTotal admissions: ", total.admissions, "\nPublic payer admissions: ", public.payer.admissions, "\nPercent public payer admissions: ", percent(pct.public.payer.admissions), sep = ""))) +
+    geom_label(data = filter(har.admissions.public.payer.avg.ruca, year == 2017), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
+    labs(x="", y = "", color="", title = "Percent of admissions by public payer patients for each hospital")+
+    scale_y_continuous(labels=scales::percent)+
+    theme_line+
+    scale_color_manual(values= color.ruca,
+                       guide = guide_legend(ncol = 3)) +
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 45, hjust = .9))
+  
+
+girafe( ggobj = har.admissions.public.payer.ruca.plot, width_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+

@@ -1,0 +1,22 @@
+name: "Ag-and-rural-economy-site"
+output_dir: docs
+navbar:
+  title: "Ag and the rural economy"
+  left:
+    - text: "Summary and data overview"
+      href: index.html
+    - text: "Number of hospitals"
+      href: n_hospitals.html
+    - text: "Financials"
+      menu:
+        - text: "Net income"
+          href: net_income.html
+        - text: "Margins"
+          href: margins.html
+    - text: "Payer mix"
+      href: payer_mix.html
+    - text: "Admissions"
+      href: admissions.html
+output:
+  html_document:
+    css: "styles.css"

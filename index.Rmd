@@ -1,0 +1,48 @@
+---
+title: "Summary and data overview"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+runtime: shiny
+resource_files:
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.cpg
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.dbf
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.prj
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbn
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.sbx
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shp.xml
+- Data/Shapefiles/County shapefiles/MNCounties_MNDOT.shx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(sf)
+library(ggrepel)
+library(scales)
+library(shiny)
+library(shinycssloaders)
+library(ggiraph)
+library(kableExtra)
+library(rmapshaper)
+library(cowplot)
+library(DT)
+```
+
+<br>
+
+# Summary
+
+Summary here
+
+<br>
+
+# About the data
+
+This analysis uses the Hospital Annual Report (HAR) data provided by every hospital in the state. Hospitals are required to provide an immense amount of information regarding their financial state, including breakdowns of revenue and expenses, such as the amount of uncompensated care, salaries for various staff, revenue by each department/type of service provided within the hospital, and the amount of revenue from Medicare, Medicaid, etc...
+
+The data I have here goes back to 2014. The data is broken down by each hospital id and the value for each question of the report, which is designated by a code. For example, the code 0200 represents the income/loss from operations line in the HAR report.
+
+<br>
