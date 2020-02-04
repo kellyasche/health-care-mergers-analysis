@@ -1,7 +1,7 @@
-name: "Ag-and-rural-economy-site"
+name: "Health-care-merger-analysis"
 output_dir: docs
 navbar:
-  title: "Ag and the rural economy"
+  title: "Health care merger analysis"
   left:
     - text: "Summary and data overview"
       href: index.html

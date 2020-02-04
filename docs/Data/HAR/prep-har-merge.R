@@ -13,6 +13,8 @@ har.codes <- read_csv("Data/HAR/har-codes.csv")
 
 hospital_id <- read_csv("Data/HAR/hospital-id.csv")
 
+names(hospital_id)
+
 har.2017 <- read_csv("Data/HAR/hccis2017.csv") %>%
   left_join(hospital_id[,c(1,3,4,8)], by = c("hccis_id" = "HCCIS ID")) %>%
   drop_na(County)
@@ -40,3 +42,12 @@ har <- har.2017 %>%
   left_join(counties.regions, by = c("County" = "Name"))
 
 write_csv(har, "Data/HAR/Master-har.csv")
+
+
+# Including hospital affiliation to master --------------------------------
+
+har.affiliation <- har %>%
+  left_join(hospital_id[,c(1,34,35)], by = c("hccis_id" = "HCCIS ID"))
+
+write_csv(har.affiliation, "Data/HAR/Master-har-affiliation.csv")
+
