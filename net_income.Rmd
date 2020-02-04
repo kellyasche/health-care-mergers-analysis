@@ -155,6 +155,8 @@ datatable(har.inc.rev.list, class = "cell-border stripe", filter = "top", rownam
 
 Due to Mayo - Rochester's huge income that dwarfs every other hospital, the following chart leaves it out so we can better examine all the other hospitals in the state. All hospitals that have had their data redacted have also been removed from analysis.
 
+<br>
+
 ## Individual hospitals {.tabset}
 
 The charts below provide each hospital's net income (or net loss) for 2017 within each region. 
@@ -252,6 +254,8 @@ girafe( ggobj = har.income.loss.box.ruca.plot, width_svg = 7) %>%
                  opts_zoom(max = 5))
 ```
 
+<br>
+
 ## Boxplots of income and loss {.tabset}
 
 The chart below is a boxplot that provides the mean of the income loss for each region (the horizontal line within each box), the range of income or loss within 3 standard deviations from the mean, and and outliers (the dots outside of the box). 
@@ -311,6 +315,8 @@ girafe( ggobj = har.income.loss.box.ruca.2.plot, width_svg = 7) %>%
 
 
 ```
+
+<br>
 
 ## Percentage of hospitals with a net loss {.tabset}
 

@@ -1,5 +1,10 @@
 base
-shiny
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 tidyverse
 ggplot2
 tibble
@@ -12,6 +17,7 @@ forcats
 sf
 ggrepel
 scales
+shiny
 shinycssloaders
 ggiraph
 kableExtra
