@@ -101,39 +101,35 @@ mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp",
 ```
 
 ```{r prep master file, include=FALSE}
-master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
-  filter(STCD == "MN") %>%
-  mutate(CAH = "yes",
-         CITY = str_to_upper(CITY))
-
 master.har <- read_csv("Data/HAR/Master-har.csv") %>%
   rename(year = rpt_year) %>%
   mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
          edr = str_replace(edr, "  ", " ")) %>%
-  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+  rename(`Hospital Name` = 5)
 
 ```
 
 # Margins of all hospitals
 
-Below is a list of each hospital's 2017 total revenue, net income/loss, and their margin. 
+Below is a list of each hospital's 2018 total revenue, net income/loss, and their margin. 
 
 <br>
 
-```{r prep 2017 margin table for each hospital, include = FALSE}
-har.margin.2017.table <- master.har %>%
+```{r prep 2018 margin table for each hospital, include = FALSE}
+har.margin.2018.table <- master.har %>%
   filter(code %in% c(250, 200),
-         year == 2017) %>%
+         year == 2018) %>%
   mutate(code = ifelse(code == 200, "net.income", "total.revenue"),
          value = as.numeric(value),
-         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH")) %>%
-  spread(key = code, value = value) %>%
-  select(3,4,5,8,10,11,13,12) %>%
+         CAH = ifelse(CAH == "No", "Non-CAH", "CAH")) %>%
+  spread(key = code, value = value) %>% 
+  select(3,4,5,6,7,8,10,11,13,12, 14) %>%
   mutate(Margins = net.income/total.revenue)
+  
 ```
 
 ```{r table of 2017 margins for each hospital}
-datatable(har.margin.2017.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
+datatable(har.margin.2018.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
           options = list(scrollX = TRUE)) %>%
   formatStyle("Margins",
               target = "row",
@@ -151,9 +147,9 @@ Since 4% is considered a healthy margin for a hospital, it's important to see ho
 
 <br>
 
-## 2017 margins {.tabset}
+## 2018 margins {.tabset}
 
-Not suprisingly, given the number of hospitals that recorded a net loss in Southwest Minnesota for 2017, that region also has the highest number and percentage of hospitals that fall below the 4% margin threshold. Northeast also has a significanlty high number of hospitals below the threshold.
+Not suprisingly, given the number of hospitals that recorded a net loss in Southwest Minnesota for 2018, that region also has the highest number and percentage of hospitals that fall below the 4% margin threshold. Northeast also has a significanlty high number of hospitals below the threshold.
 
 Even more telling is the RUCA chart. This psoitively shows that hospitals operating outside of our most urban counties are significantly more likely to have margins below the 4% threshold. Nearly 70% of the hospitals in entirely rural areas are below the threshold, while nearly half of the hospitals are below the threshold in the other non-entirely urban counties.
 
@@ -164,7 +160,7 @@ har.margins <- master.har %>%
   filter(code %in% c(200, 250)) %>%
   mutate(code = ifelse(code == 200, "income.loss", "total.revenue"),
          value = as.numeric(value),
-         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH")) %>%
+         CAH = ifelse(CAH == "No", "Non-CAH", "CAH")) %>%
   spread(key = code, value = value) %>%
   mutate(margins = income.loss / total.revenue,
          `Hospital Name` = str_replace(`Hospital Name`, "'", ""),
@@ -207,12 +203,12 @@ har.margins.avg.ruca <- har.margins %>%
 
 ```{r chart margins points pr}
 
-har.margins.pr.plot <- ggplot(filter(har.margins, year == 2017), aes(planning.region, margins, color = planning.region)) +
+har.margins.pr.plot <- ggplot(filter(har.margins, year == 2018), aes(planning.region, margins, color = planning.region)) +
         geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(planning.region, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income: ", dollar(income.loss), "\nMargin: ", percent(margins), sep = ""))) +
-          geom_label(data = filter(har.margins.threshold.pr, year == 2017), size = 3, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
-          geom_label(data = filter(har.margins.avg.pr, year == 2017), aes(x = planning.region, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
+          geom_label(data = filter(har.margins.threshold.pr, year == 2018), size = 3, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
+          geom_label(data = filter(har.margins.avg.pr, year == 2018), aes(x = planning.region, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
           geom_hline(yintercept = 0.04, color = "black") +
-        labs(x="", y = "", color="", title = "Margins for each hospital in 2017")+
+        labs(x="", y = "", color="", title = "Margins for each hospital in 2018")+
         scale_y_continuous(labels=scales::percent,
                            limits = c(-.4, .45))+
         theme_line+
@@ -235,12 +231,12 @@ girafe( ggobj = har.margins.pr.plot, width_svg = 8, height_svg = 6) %>%
 <br>
 
 ```{r chart margins points ruca}
-har.margins.ruca.plot <- ggplot(filter(har.margins, year == 2017), aes(Dem_Desc, margins, color = Dem_Desc)) +
+har.margins.ruca.plot <- ggplot(filter(har.margins, year == 2018), aes(Dem_Desc, margins, color = Dem_Desc)) +
         geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(Dem_Desc, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income: ", dollar(income.loss), "\nMargin: ", percent(margins), sep = ""))) +
-          geom_label(data = filter(har.margins.threshold.ruca, year == 2017), size = 3, show.legend = FALSE, aes(x = Dem_Desc, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
-          geom_label(data = filter(har.margins.avg.ruca, year == 2017), aes(x = Dem_Desc, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
+          geom_label(data = filter(har.margins.threshold.ruca, year == 2018), size = 3, show.legend = FALSE, aes(x = Dem_Desc, y = -.3, label = paste(below.threshold, " hospitals\nunhealthy margins\n", percent(pct.below.threshold), " of hospitals", sep = ""))) +
+          geom_label(data = filter(har.margins.avg.ruca, year == 2018), aes(x = Dem_Desc, y = .4, label = paste("Avg margins\n", percent(avg.margins), sep = "")), size = 3, show.legend = FALSE) +
           geom_hline(yintercept = 0.04, color = "black") +
-        labs(x="", y = "", color="", title = "Margins for each hospital in 2017")+
+        labs(x="", y = "", color="", title = "Margins for each hospital in 2018")+
         scale_y_continuous(labels=scales::percent,
                            limits = c(-.4, .3))+
         theme_line+
@@ -343,7 +339,7 @@ This section examines whether there are any differences in margins between CAH a
 
 <br>
 
-## 2017 individual hospitals {.tabset}
+## 2018 individual hospitals {.tabset}
 
 The charts below provide the margins for each hospital grouped by region and RUCA county group. The red points are CAHs. 
 
@@ -377,11 +373,11 @@ har.cah.margins.threshold.ruca <- har.margins %>%
 
 ```{r chart margins of hospitals with CAH pr}
 
-har.margins.cah.pr.plot <- ggplot(filter(har.margins, year == 2017), aes(planning.region, margins, color = CAH)) +
+har.margins.cah.pr.plot <- ggplot(filter(har.margins, year == 2018), aes(planning.region, margins, color = CAH)) +
     geom_point_interactive(size = 3, aes(data_id = margins, tooltip = paste(planning.region, "\nHospital Name: ", `Hospital Name`, "\nType of hospital: ", CAH, "\nTotal revenue: ", dollar(total.revenue), "\nNet income/loss: ", dollar(income.loss), "\nMargins: ", percent(margins), sep = ""))) +
-    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste("CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2018, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -.3, label = paste("CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
     geom_hline(yintercept = 0.04, color = "black") +
-    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2017, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .3, label = paste("Non-CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
+    geom_label(data = filter(har.cah.margins.threshold.pr, year == 2018, CAH == "Non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .3, label = paste("Non-CAH below 4%\n", below.threshold, " (", percent(pct.below.threshold), ")", sep = ""))) +
     labs(x="", y = "", color="", title = "Margins of each hospital - CAHs identified in red")+
     scale_y_continuous(labels=scales::percent,
                        limits = c(-.4, .4))+

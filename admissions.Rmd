@@ -100,16 +100,11 @@ mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp",
 ```
 
 ```{r prep master file, include=FALSE}
-master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
-  filter(STCD == "MN") %>%
-  mutate(CAH = "yes",
-         CITY = str_to_upper(CITY))
-
 master.har <- read_csv("Data/HAR/Master-har.csv") %>%
-  rename(year = rpt_year) %>%
+  rename(year = rpt_year,
+         `Hospital Name` = 5) %>%
   mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
-         edr = str_replace(edr, "  ", " ")) %>%
-  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+         edr = str_replace(edr, "  ", " ")) 
 
 ```
 
@@ -140,14 +135,14 @@ har.admissions.payer <- master.har %>%
   filter(code %in% c(4370, 4373, 4376, 4379, 4340 ),
          hccis_id != 145) %>%
   mutate(value = as.numeric(value),
-         CAH = ifelse(is.na(CAH), "Non-CAH", "CAH"),
+         CAH = ifelse(CAH == "No", "Non-CAH", "CAH"),
          code = ifelse(code == 4370, "medicare.admissions",
                        ifelse(code == 4373, "ma.admissions",
                               ifelse(code == 4376, "mncare.admissions",
                                      ifelse(code == 4379, "commercial.admissions", "total.admissions")))))
 
 har.admissions.public.payer <- har.admissions.payer %>%
-  group_by(hccis_id, `Hospital Name`, City, CAH,year, planning.region, Dem_Desc) %>%
+  group_by(hccis_id, `Hospital Name`, CAH,year, planning.region, Dem_Desc) %>%
   summarise(public.payer.admissions = sum(value[code %in% c("medicare.admissions", "ma.admissions", "mncare.admissions")], na.rm = TRUE),
             total.admissions = sum(value[code == "total.admissions"], na.rm = TRUE)) %>%
   ungroup() %>%
@@ -159,12 +154,12 @@ har.admissions.public.payer <- har.admissions.payer %>%
 
 ```{r table public payer admissions}
 har.admissions.public.payer.table <- har.admissions.public.payer %>%
-  filter(year == 2017) %>%
-  select(2,3,4,6,7,8,9,10)
+  filter(year == 2018) %>%
+  select(2,3,4,6,7,8,9)
 
-datatable(har.admissions.public.payer.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
+  datatable(har.admissions.public.payer.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
           options = list(scrollX = TRUE)) %>%
-  formatPercentage(8)
+  formatPercentage(7)
 
 ```
 
@@ -172,11 +167,11 @@ datatable(har.admissions.public.payer.table, class = "cell-border stripe", filte
 
 # Analysis of admissions by public payer patients by region and RUCA {.tabset}
 
-The charts here show total admissions of all the hospitals in each region.
+The charts here show total admissions of all the hospitals in each region in 2018.
 
 The differences in admissions is very clear. Regions outside of the seven county metro had the highest percentages. Hospitals in the Southwest region had an average of nearly 80% of their admissions from patients who were on a public insurance program. It was 60% for hospitals in the seven-county metro.
 
-Again, the RUCA groups really shows the difference rurality has on the percentages. In 2017, 86% of the patients admitted to hospitals in our most rural counties were on a public program compared to 61% of patients in entirely urban hospitals.
+Again, the RUCA groups really shows the difference rurality has on the percentages. In 2018, 86% of the patients admitted to hospitals in our most rural counties were on a public program compared to 61% of patients in entirely urban hospitals.
 
 <br>
 
@@ -201,9 +196,9 @@ har.admissions.public.payer.avg.ruca <- har.admissions.public.payer %>%
 <br>
 
 ```{r chart admissions by public payer for pr}
-har.admissions.public.payer.pr.plot <- ggplot(filter(har.admissions.public.payer, year == 2017), aes(planning.region, pct.public.payer.admissions, color = planning.region)) +
+har.admissions.public.payer.pr.plot <- ggplot(filter(har.admissions.public.payer, year == 2018), aes(planning.region, pct.public.payer.admissions, color = planning.region)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.payer.admissions, tooltip = paste(planning.region, "\n", `Hospital Name`, ", ", CAH, "\nTotal admissions: ", total.admissions, "\nPublic payer admissions: ", public.payer.admissions, "\nPercent public payer admissions: ", percent(pct.public.payer.admissions), sep = ""))) +
-    geom_label(data = filter(har.admissions.public.payer.avg.pr, year == 2017), size = 2, show.legend = FALSE, aes(x = planning.region, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
+    geom_label(data = filter(har.admissions.public.payer.avg.pr, year == 2018), size = 2, show.legend = FALSE, aes(x = planning.region, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of admissions by public payer patients for each hospital")+
     scale_y_continuous(labels=scales::percent)+
     theme_line+
@@ -225,9 +220,9 @@ girafe( ggobj = har.admissions.public.payer.pr.plot, width_svg = 8) %>%
 <br>
 
 ```{r chart admissions by public payer for ruca}
-har.admissions.public.payer.ruca.plot <- ggplot(filter(har.admissions.public.payer, year == 2017), aes(Dem_Desc, pct.public.payer.admissions, color = Dem_Desc)) +
+har.admissions.public.payer.ruca.plot <- ggplot(filter(har.admissions.public.payer, year == 2018), aes(Dem_Desc, pct.public.payer.admissions, color = Dem_Desc)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.payer.admissions, tooltip = paste(Dem_Desc, "\n", `Hospital Name`, ", ", CAH, "\nTotal admissions: ", total.admissions, "\nPublic payer admissions: ", public.payer.admissions, "\nPercent public payer admissions: ", percent(pct.public.payer.admissions), sep = ""))) +
-    geom_label(data = filter(har.admissions.public.payer.avg.ruca, year == 2017), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
+    geom_label(data = filter(har.admissions.public.payer.avg.ruca, year == 2018), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .25, label = paste("Mean %: ", percent(mean.public.payer.pct), "\nMedian %: ", percent(median.public.payer.pct), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of admissions by public payer patients for each hospital")+
     scale_y_continuous(labels=scales::percent)+
     theme_line+

@@ -100,16 +100,13 @@ mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp",
 ```
 
 ```{r prep master file, include=FALSE}
-master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
-  filter(STCD == "MN") %>%
-  mutate(CAH = "yes",
-         CITY = str_to_upper(CITY))
+
 
 master.har <- read_csv("Data/HAR/Master-har.csv") %>%
   rename(year = rpt_year) %>%
   mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
          edr = str_replace(edr, "  ", " ")) %>%
-  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+  rename(`Hospital Name` = 5)
 
 ```
 
@@ -117,9 +114,9 @@ master.har <- read_csv("Data/HAR/Master-har.csv") %>%
 
 # Revenue and expenses for each hospital
 
-The table below provides the 2017 total revenue, total expanses and the income or loss for each hospital in Minnesota. Hospitals highlighted in red reported a net loss.
+The table below provides the 2018 total revenue, total expanses and the income or loss for each hospital in Minnesota. Hospitals highlighted in red reported a net loss.
 
-It's worth looking at the immense revenue and income accrued by the Mayo hospital in Rochester. After expenses, the hospital made over $656 million dollars in 2017.
+It's worth looking at the immense revenue and income accrued by the Mayo hospital in Rochester. After expenses, the hospital made over $821 million dollars in 2018.
 
 Some hospitals won't have any data attached to them due to the low patient volume. This data has been redacted from public view.
 
@@ -129,7 +126,7 @@ This isn't for analysis but rather just for information for someone that would w
 
 ```{r revenue and expenses for each hospital table}
 har.inc.rev.list <- master.har %>%
-  filter(year == 2017,
+  filter(year == 2018,
          code %in% c(250, 260, 200)) %>%
   mutate(code = ifelse(code == 250, "total.revenue",
                        ifelse(code == 260, "total.expenses", "income.loss")),
@@ -144,7 +141,7 @@ datatable(har.inc.rev.list, class = "cell-border stripe", filter = "top", rownam
   formatStyle("income.loss",
               target = "row",
               backgroundColor = styleInterval(c(-34017629, 0), c("red", "red", "transparent"))) %>%
-  formatCurrency(5:7, "$")
+  formatCurrency(6:8, "$")
 
 
 ```
@@ -159,9 +156,9 @@ Due to Mayo - Rochester's huge income that dwarfs every other hospital, the foll
 
 ## Individual hospitals {.tabset}
 
-The charts below provide each hospital's net income (or net loss) for 2017 within each region. 
+The charts below provide each hospital's net income (or net loss) for 2018 within each region. 
 
-The planning region chart shows significant range differences between the seven county metro and all the other regions. The seven county metro has a range of $-34 million (Children's Hospital) to $68 million for Abbot Northwestern. Outside of the St. Cloud hospital, all other regions have losses or incomes from $-6 million to $17 million in earnings. 
+The planning region chart shows significant range differences between the seven county metro and all the other regions. The seven county metro has a range of $-4 million (North Memorial Medical Center) to $68 million for Park Nicollet Methodist Hospital. All other regions have losses or incomes from $-9 million to $29 million in earnings. 
 
 Southwest Minnesota has the largest number with 16 hospitals (49% of the hospitals) recording a net loss in the region.
 
@@ -173,7 +170,7 @@ In addition, counties considered entirely rural are most likely to have a hospit
 
 ```{r prep income or loss for each hospital}
 har.income.loss.box <- master.har %>%
-  filter(year == 2017,
+  filter(year == 2018,
          code == 200,
          hccis_id != 145) %>%
   mutate(value = as.numeric(value),
@@ -208,7 +205,7 @@ har.income.loss.threshold.ruca <- har.income.loss.box %>%
 <br>
 
 ```{r chart income loss point plot pr}
-har.income.loss.box.pr.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(planning.region, value, color = planning.region)) +
+har.income.loss.box.pr.plot <- ggplot(filter(har.income.loss.box, year==2018), aes(planning.region, value, color = planning.region)) +
         geom_point_interactive(size = 2, aes(data_id = value, tooltip = paste(planning.region, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value))))+
         geom_label(data = har.income.loss.threshold.pr, show.legend = FALSE, size = 3, aes(x = planning.region, y = -30000000, label = paste(net.loss, " hospitals\nwith net loss\n", percent(pct.net.loss), " of hospitals", sep = ""))) +
         geom_hline(yintercept = 0) +
@@ -234,7 +231,7 @@ girafe( ggobj = har.income.loss.box.pr.plot, width_svg = 7) %>%
 <br>
 
 ```{r chart income loss point plot ruca}
-har.income.loss.box.ruca.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(Dem_Desc, value, color = Dem_Desc)) +
+har.income.loss.box.ruca.plot <- ggplot(filter(har.income.loss.box, year==2018), aes(Dem_Desc, value, color = Dem_Desc)) +
         geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(Dem_Desc, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value))))+
         geom_label(data = har.income.loss.threshold.ruca, show.legend = FALSE, size = 3, aes(x = Dem_Desc, y = -30000000, label = paste(net.loss, " hospitals\nwith net loss\n", percent(pct.net.loss), " of hospitals", sep = ""))) +
         geom_hline(yintercept = 0) +
@@ -271,7 +268,7 @@ This proves that patient volume is a significant source of a hospital business m
 <br>
 
 ```{r chart income loss boxplot pr}
-har.income.loss.box.pr.2.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(planning.region, value, color = planning.region)) +
+har.income.loss.box.pr.2.plot <- ggplot(filter(har.income.loss.box, year==2018), aes(planning.region, value, color = planning.region)) +
         geom_boxplot_interactive() +
         geom_hline(yintercept = 0) +
         labs(x="", y = "", title = "Income and loss of each hospital by planning region")+
@@ -296,7 +293,7 @@ girafe( ggobj = har.income.loss.box.pr.2.plot, width_svg = 7) %>%
 
 ```{r chart income loss boxplot ruca}
 
-har.income.loss.box.ruca.2.plot <- ggplot(filter(har.income.loss.box, year==2017), aes(Dem_Desc, value, color = Dem_Desc)) +
+har.income.loss.box.ruca.2.plot <- ggplot(filter(har.income.loss.box, year==2018), aes(Dem_Desc, value, color = Dem_Desc)) +
         geom_boxplot_interactive() +
         geom_hline(yintercept = 0) +
         labs(x="", y = "", title = "Income and loss of each hospital by rural-urban commuting area county group")+
@@ -320,15 +317,15 @@ girafe( ggobj = har.income.loss.box.ruca.2.plot, width_svg = 7) %>%
 
 ## Percentage of hospitals with a net loss {.tabset}
 
-One thing to look at is whether 2017 is an outlier or if the number of hospitals recording a net loss in 2017 is farily typical compared to other years. 
+One thing to look at is whether 2018 is an outlier or if the number of hospitals recording a net loss in 2018 is farily typical compared to other years. 
 
-The chart below provides the percentage of hospitals with a net income loss in each region from 2014 to 2017. For the most part, each region experiences little change change in the percentage of their hospitals recording a net loss. 
+The chart below provides the percentage of hospitals with a net income loss in each region from 2014 to 2018. For the most part, each region experiences little change change in the percentage of their hospitals recording a net loss. 
 
 Our most rural regions typically have a higher percentage of hospitals that are experiencing net losses in any given year. The worst is in Southwest Minnesota where 40% to 50% of the hospitals have a net loss.
 
 Southeast experiences a lot of variation from year to year due to having so few hospitals compared to the other regions. A shift of one or two hospitals from a net income to a net loss has a big impact on their percentage. Hover over the dots to get the actual number of hospitals that recorded a net loss.
 
-Interetingly, when broken up by RUCA county groups, our most rural hospitals have seen improvements as far as the percentage of them with a net income loss. These hospitals are still most likely to have a net income loss, but it isn't as dire as I was expecting. This might give more credence to the idea that many of the CAHs are in our most rural areas and tend to do better. Lets break that down next
+The RUCA chart shows that it's been typical that a larger percent of hospitals experience a net income loss as their location becomes more rural.
 
 <br>
 
@@ -409,11 +406,11 @@ girafe( ggobj = har.income.trends.ruca.plot, width_svg = 8) %>%
 
 # Analysis of CAH hospital net income by region and ruca {.tabset}
 
-The chart below provides each hospitals net income or loss in 2017 with the CAH hospitals highlighted as red. 
+The chart below provides each hospitals net income or loss in 2018 with the CAH hospitals highlighted as red. 
 
 Most of the literature I have read indicated that non-CAH rural hospitals typically have a tougher time making income and are more likely to be doing better financially. I'm not sure that is the case in Minnesota.
 
-In nearly every region, non-CAHs are less likely to be reporting a net loss in 2017. Southwest Minnesota is the only region where that is not the case, however it's worth noting that there are only 3 non-CAHs in Soutwest MN.
+In nearly every region, non-CAHs are less likely to be reporting a net loss in 2018. Southwest Minnesota is the only region where that is not the case, however it's worth noting that there are only 3 non-CAHs in Soutwest MN.
 
 Interstingly, the RUCA chart shows less conclusivity. 100% of the hospitals in entirely rural counties are CAHs, so that doesn't show much. However, it's worth noting that this county group had the highest percentage of hospitals recording a net loss. Besides that, there isn't much of a gap in percentage of hospital types that seem to indicate a trend by the type of hospital. 
 
@@ -423,7 +420,7 @@ Really, signs are pointing that rurality matters more than CAH designation. Marg
 
 ```{r prep cah income or loss point plot, include = FALSE}
 cah.income.trends <- har.income.trends %>%
-  mutate(CAH = ifelse(is.na(CAH), "Non-CAH", "CAH"),
+  mutate(CAH = ifelse(CAH == "No", "Non-CAH", "CAH"),
          `Hospital Name` = str_replace(`Hospital Name`, "'", "")) %>%
   filter(hccis_id != c(91, 145)) %>%
   mutate(Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"),
@@ -462,7 +459,7 @@ har.cah.netloss.ruca <- cah.income.trends %>%
 
 ```{r chart cah income or loss pr}
 
-cah.income.trends.pr.plot <- ggplot(filter(cah.income.trends, year==2017), aes(planning.region, value, color = CAH)) +
+cah.income.trends.pr.plot <- ggplot(filter(cah.income.trends, year==2018), aes(planning.region, value, color = CAH)) +
         geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(planning.region, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value), "\n", CAH, sep = "")))+
         geom_hline(yintercept = 0) +
         geom_label(data = filter(har.cah.netloss.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = -30000000, label = paste("CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
@@ -490,7 +487,7 @@ cah.income.trends.pr.plot <- ggplot(filter(cah.income.trends, year==2017), aes(p
 <br>
 
 ```{r chart cah income or loss ruca}
-cah.income.trends.ruca.plot <- ggplot(filter(cah.income.trends, year==2017), aes(Dem_Desc, value, color = CAH)) +
+cah.income.trends.ruca.plot <- ggplot(filter(cah.income.trends, year==2018), aes(Dem_Desc, value, color = CAH)) +
         geom_point_interactive(size = 3, aes(data_id = value, tooltip = paste(Dem_Desc, "\nHospital: ", `Hospital Name`, "\nIncome or loss: ", dollar(value), "\n", CAH, sep = "")))+
         geom_hline(yintercept = 0) +
         geom_label(data = filter(har.cah.netloss.ruca, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = -30000000, label = paste("CAHs with net loss\n", net.loss, " (", percent(pct.net.loss), ")", sep = ""))) +
@@ -509,57 +506,3 @@ girafe( ggobj = cah.income.trends.ruca.plot, width_svg = 7) %>%
                  opts_sizing(rescale = FALSE),
                  opts_zoom(max = 5))
 ```
-
-<br>
-
-# Affiliated vs. non-affiliated hospitals
-
-## Percent of hospitals affiliated {.tabset}
-
-Summary here
-
-<br>
-
-```{r prep pct of hospitals affiliated, include=FALSE, cache=TRUE}
-master.har.affiliation <- read_csv("Data/HAR/Master-har-affiliation.csv") %>%
-  rename(year = rpt_year) %>%
-  mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
-         edr = str_replace(edr, "  ", " "),
-         planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"),
-         edr = fct_relevel(edr, "EDR 1 - Northwest", "EDR 2 - Headwaters", "EDR 3 - Arrowhead", "EDR 4 - West Central", "EDR 5 - North Central", "EDR 6E- Southwest Central", "EDR 6W- Upper Minnesota Valley", "EDR 7E- East Central", "EDR 7W- Central", "EDR 8 - Southwest", "EDR 9 - South Central", "EDR 10 - Southeast", "EDR 11 - 7 County Twin Cities", "Minnesota"),
-         Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban")) %>%
-  rename(system.affiliation = 13,
-         affiliation.type = 14)
-
-har.pct.affiliated.pr <- master.har.affiliation %>%
-  filter(code == 200) %>%
-  mutate(affiliated.binary = ifelse(system.affiliation == "No Affiliation", "No affiliation", "Affiliated"),
-         affiliated.binary = as.factor(affiliated.binary)) %>%
-  group_by(year, planning.region, affiliated.binary) %>%
-  summarise(n()) %>%
-  ungroup() %>%
-  rename(count = 4) %>%
-  group_by(year, planning.region) %>%
-  mutate(pct.count = count / sum(count)) %>%
-  ungroup()
-
-har.pct.affiliated.ruca <- master.har.affiliation %>%
-  filter(code == 200) %>%
-  mutate(affiliated.binary = ifelse(system.affiliation == "No Affiliation", "No affiliation", "Affiliated"),
-         affiliated.binary = as.factor(affiliated.binary)) %>%
-  group_by(year, Dem_Desc, affiliated.binary) %>%
-  summarise(n()) %>%
-  ungroup() %>%
-  rename(count = 4) %>%
-  group_by(year, Dem_Desc) %>%
-  mutate(pct.count = count / sum(count)) %>%
-  ungroup()
-
-```
-
-### Planning Region
-
-### RUCA
-
-
-

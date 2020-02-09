@@ -100,16 +100,11 @@ mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp",
 ```
 
 ```{r prep master file, include=FALSE}
-master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
-  filter(STCD == "MN") %>%
-  mutate(CAH = "yes",
-         CITY = str_to_upper(CITY))
 
 master.har <- read_csv("Data/HAR/Master-har.csv") %>%
   rename(year = rpt_year) %>%
   mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
-         edr = str_replace(edr, "  ", " ")) %>%
-  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+         edr = str_replace(edr, "  ", " ")) 
 
 ```
 
@@ -239,8 +234,8 @@ When split up by RUCA county group, the town/rural mix county group has the high
 ```{r prep number and percentage of CAHs by pr and ruca, include = FALSE}
 cah.n <- master.har %>%
   filter(code == 200,
-         year == 2017) %>%
-  mutate(CAH = ifelse(is.na(CAH), 0, 1))
+         year == 2018) %>%
+  mutate(CAH = ifelse(CAH == "No", 0, 1))
 
 cah.n.pr <- cah.n %>%
   group_by(planning.region) %>%
@@ -354,7 +349,7 @@ In case anyone is interested, here is the complete list of all the CAHs in Minne
 ```{r prep list of CAHs}
 cah.list <- master.har %>%
   filter(code == 200,
-         CAH == "yes") %>%
+         CAH == "Yes") %>%
   distinct(`Hospital Name`, .keep_all = TRUE) %>%
   select(5,6,7)
 

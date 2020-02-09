@@ -100,16 +100,13 @@ mn_counties <- st_read("Data/Shapefiles/county shapefiles/MNCounties_MNDOT.shp",
 ```
 
 ```{r prep master file, include=FALSE}
-master.cah.list <- read_csv("Data/HAR/CAH list.csv") %>%
-  filter(STCD == "MN") %>%
-  mutate(CAH = "yes",
-         CITY = str_to_upper(CITY))
+
 
 master.har <- read_csv("Data/HAR/Master-har.csv") %>%
-  rename(year = rpt_year) %>%
+  rename(year = rpt_year,
+         `Hospital Name` = 5) %>%
   mutate(planning.region = str_replace(planning.region, " Minnesota", ""),
-         edr = str_replace(edr, "  ", " ")) %>%
-  left_join(master.cah.list[, c(2,11)], by = c("City" = "CITY"))
+         edr = str_replace(edr, "  ", " "))
 
 ```
 
@@ -129,9 +126,9 @@ It's worth noting that many of the smaller hospitals in rural areas have had spe
 
 <br>
 
-# The percent of charges to public programs for each hospital in 2017
+# The percent of charges to public programs for each hospital in 2018
 
-The table below provides the 2017 percentage of total patient charges to a public program.
+The table below provides the 2018 percentage of total patient charges to a public program.
 
 <br>
 
@@ -150,19 +147,18 @@ har.ma <- master.har %>%
 
 ```{r percent of charges to public program table}
 har.ma.table <- har.ma %>%
-  group_by(year, `Hospital Name`, hccis_id, City, planning.region, Dem_Desc, CAH) %>%
+  group_by(year, `Hospital Name`, hccis_id, planning.region, Dem_Desc, CAH) %>%
   summarise(public.charges = sum(value[code %in% c("medicare", "ma.pmap", "mncare")],na.rm = TRUE),
             total.patient.charges = sum(value[code == "total.patient.charges"], na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(pct.public.charges = public.charges / total.patient.charges) %>%
-  filter(year == 2017) %>%
-  select(2,4,5,6,7,8,9,10)
-  
-  
+  filter(year == 2018) %>%
+  select(2,4,5,6,7,8,9)
+
 datatable(har.ma.table, class = "cell-border stripe", filter = "top", rownames = FALSE,
           options = list(scrollX = TRUE)) %>%
-    formatCurrency(6:7, "$") %>%
-    formatPercentage(8)
+    formatCurrency(5:6, "$") %>%
+    formatPercentage(7)
 ```
 
 <br>
@@ -173,7 +169,7 @@ This section will examine the percent of income made in each hospital comes from
 
 <br>
 
-## 2017 individual hospitals by region {.tabset}
+## 2018 individual hospitals by region {.tabset}
 
 The chart below provides the percentage of each hospitals charges to a patient that is publicly insured. It's obvious that hospitals in the seven-county metro have some of the lowest percentages in the state. Even more obvious is the RUCA chart which definitely shows that hospitals a concentrated around higher percentages as they become more rurally located.
 
@@ -198,7 +194,7 @@ har.ma.each <- har.ma %>%
 <br>
 
 ```{r chart percent public payers pr}
-har.ma.each.pr.plot <- ggplot(filter(har.ma.each, year == 2017), aes(planning.region, pct.public.charges, color = planning.region)) +
+har.ma.each.pr.plot <- ggplot(filter(har.ma.each, year == 2018), aes(planning.region, pct.public.charges, color = planning.region)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.charges, tooltip = paste("Planning region: ", planning.region, "\nHospital name: ", `Hospital Name`, "\nPercent of patient charges to public program: ", percent(pct.public.charges)))) +
     labs(x="", y = "", color="", title = "Percent of patient charges to public program in each hospital by region")+
     scale_y_continuous(labels=scales::percent) +
@@ -220,7 +216,7 @@ girafe( ggobj = har.ma.each.pr.plot, width_svg = 8) %>%
 <br>
 
 ```{r chart percent public payers ruca}
-har.ma.each.ruca.plot <- ggplot(filter(har.ma.each, year == 2017), aes(Dem_Desc, pct.public.charges, color = Dem_Desc)) +
+har.ma.each.ruca.plot <- ggplot(filter(har.ma.each, year == 2018), aes(Dem_Desc, pct.public.charges, color = Dem_Desc)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.charges, tooltip = paste("RUCA County Group: ", Dem_Desc, "\nHospital name: ", `Hospital Name`, "\nPercent of patient charges to public program: ", percent(pct.public.charges)))) +
     labs(x="", y = "", color="", title = "Percent of patient charges to public program in each hospital by RUCA county group")+
     scale_y_continuous(labels=scales::percent) +
@@ -236,7 +232,7 @@ girafe( ggobj = har.ma.each.ruca.plot, width_svg = 8) %>%
 
 ```
 
-## 2017 average charges to a public program by region {.tabset}
+## 2018 average charges to a public program by region {.tabset}
 
 The most interesting chart here is the RUCA. Again, rural hospitals had a significantly higher percentage of their charges going towards a public program. Our hospitals located in the state's most rural counties average nearly 70% of their charges towards a public program while our hospitals in entirely urban counties averaged 58%.
 
@@ -261,9 +257,9 @@ har.ma.avg.ruca <- har.ma.each %>%
 <br>
 
 ```{r chart percent public box pr}
-har.ma.box.pr.plot <- ggplot(filter(har.ma.each, year == 2017), aes(planning.region, pct.public.charges, color = planning.region)) +
+har.ma.box.pr.plot <- ggplot(filter(har.ma.each, year == 2018), aes(planning.region, pct.public.charges, color = planning.region)) +
     geom_boxplot_interactive() +
-    geom_label(data = filter(har.ma.avg.pr, year == 2017), size = 2, show.legend = FALSE, aes(x = planning.region, y = .5, label = paste("Mean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.ma.avg.pr, year == 2018), size = 2, show.legend = FALSE, aes(x = planning.region, y = .5, label = paste("Mean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of patient charges to public program in each hospital by region")+
     scale_y_continuous(labels=scales::percent) +
     theme_line+
@@ -284,9 +280,9 @@ girafe( ggobj = har.ma.box.pr.plot, width_svg = 8) %>%
 <br>
 
 ```{r chart percent public boxruca}
-har.ma.box.ruca.plot <- ggplot(filter(har.ma.each, year == 2017), aes(Dem_Desc, pct.public.charges, color = Dem_Desc)) +
+har.ma.box.ruca.plot <- ggplot(filter(har.ma.each, year == 2018), aes(Dem_Desc, pct.public.charges, color = Dem_Desc)) +
     geom_boxplot_interactive() +
-    geom_label(data = filter(har.ma.avg.ruca, year == 2017), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .5, label = paste("Mean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.ma.avg.ruca, year == 2018), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .5, label = paste("Mean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of patient charges to public program in each hospital by RUCA county group")+
     scale_y_continuous(labels=scales::percent) +
     theme_line+
@@ -377,7 +373,7 @@ har.cah.ma.each <- har.ma %>%
             total.charges = sum(value[code == "total.patient.charges"], na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(pct.public.charges = public.charges / total.charges,
-         CAH = ifelse(is.na(CAH), "non-CAH", "CAH"),
+         CAH = ifelse(CAH == "No", "non-CAH", "CAH"),
          `Hospital Name` = str_replace(`Hospital Name`, "'", ""),
          Dem_Desc = fct_relevel(Dem_Desc, "Entirely rural", "Town/rural mix", "Urban/town/rural mix", "Entirely urban"),
          planning.region = fct_relevel(planning.region, "Northwest", "Northeast", "Central", "Seven County Mpls-St Paul", "Southwest", "Southeast"))
@@ -401,10 +397,10 @@ har.cah.ma.avg.ruca <- har.cah.ma.each %>%
 <br>
 
 ```{r charts pct charges to public CAH pr}
-har.cah.ma.each.pr.plot <- ggplot(data = filter(har.cah.ma.each, year == 2017), aes(planning.region, pct.public.charges, color = CAH)) +
+har.cah.ma.each.pr.plot <- ggplot(data = filter(har.cah.ma.each, year == 2018), aes(planning.region, pct.public.charges, color = CAH)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.charges, tooltip = paste(planning.region, "\n", `Hospital Name`, "\nHospital type: ", CAH, "\nTotal patient charges: ", dollar(total.charges), "\nCharges to public program: ", dollar(public.charges), "\nPercent of charges to public program: ", percent(pct.public.charges), sep = ""))) +
-    geom_label(data = filter(har.cah.ma.avg.pr, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .5, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
-    geom_label(data = filter(har.cah.ma.avg.pr, year == 2017, CAH == "non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .9, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.cah.ma.avg.pr, year == 2018, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .5, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.cah.ma.avg.pr, year == 2018, CAH == "non-CAH"), size = 2, show.legend = FALSE, aes(x = planning.region, y = .9, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of charges to a public program with CAH designation in red")+
     scale_y_continuous(labels=scales::percent,
                        limits = c(.4, 1))+
@@ -426,10 +422,10 @@ girafe( ggobj = har.cah.ma.each.pr.plot, width_svg = 8) %>%
 <br>
 
 ```{r charts pct charges to public CAH ruca}
-har.cah.ma.each.ruca.plot <- ggplot(data = filter(har.cah.ma.each, year == 2017), aes(Dem_Desc, pct.public.charges, color = CAH)) +
+har.cah.ma.each.ruca.plot <- ggplot(data = filter(har.cah.ma.each, year == 2018), aes(Dem_Desc, pct.public.charges, color = CAH)) +
     geom_point_interactive(size = 3, aes(data_id = pct.public.charges, tooltip = paste(Dem_Desc, "\n", `Hospital Name`, "\nHospital type: ", CAH,  "\nTotal patient charges: ", dollar(total.charges), "\nCharges to public program: ", dollar(public.charges), "\nPercent of charges to public program: ", percent(pct.public.charges), sep = ""))) +
-    geom_label(data = filter(har.cah.ma.avg.ruca, year == 2017, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .5, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
-    geom_label(data = filter(har.cah.ma.avg.ruca, year == 2017, CAH == "non-CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .9, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.cah.ma.avg.ruca, year == 2018, CAH == "CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .5, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
+    geom_label(data = filter(har.cah.ma.avg.ruca, year == 2018, CAH == "non-CAH"), size = 2, show.legend = FALSE, aes(x = Dem_Desc, y = .9, label = paste(CAH, "\nMean: ", percent(mean.pct.public.charges), "\nMedian: ", percent(median.pct.public.charges), sep = ""))) +
     labs(x="", y = "", color="", title = "Percent of charges to a public program with CAH designation in red")+
     scale_y_continuous(labels=scales::percent,
                        limits = c(.4, 1))+
