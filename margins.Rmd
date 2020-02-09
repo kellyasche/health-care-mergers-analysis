@@ -238,7 +238,7 @@ har.margins.ruca.plot <- ggplot(filter(har.margins, year == 2018), aes(Dem_Desc,
           geom_hline(yintercept = 0.04, color = "black") +
         labs(x="", y = "", color="", title = "Margins for each hospital in 2018")+
         scale_y_continuous(labels=scales::percent,
-                           limits = c(-.4, .3))+
+                           limits = c(-.4, .5))+
         theme_line+
         scale_color_manual(values= color.ruca,
                            guide = guide_legend(ncol = 3)) +
