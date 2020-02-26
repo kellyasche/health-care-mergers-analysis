@@ -133,7 +133,7 @@ The rural-ness from which a patient originates has a significant impact on how l
 
 For example, patients from entirely rural areas traveled 77 miles for cardiology, where as patients from entirely urban counties averaged 21.
 
-There were also signficant regional differences. Broken down by planning regions, patient travel distances were significanlty higher from other regions depending on the "rural-ness" of that planning region. The northern part of the state in particular had signifanctly higher travel times.
+There were also significant regional differences. Broken down by planning regions, patient travel distances were significantly higher from other regions depending on the "rural-ness" of that planning region. The northern part of the state in particular had significantly higher travel times.
 
 <br>
 
@@ -141,7 +141,7 @@ There were also signficant regional differences. Broken down by planning regions
 
 As a hospital becomes more rural, the distance their patients travel for a service becomes significantly longer. In fact, for the three analyzed services provided below, distances traveled for services by our most rural patients was 3 to 4 times more than our most urban patients. The largest difference was for neurology, where patients in entirely rural areas traveled 100 miles on average compared to just 22 for our entirely urban patients.
 
-Another worrisome trend is that the distances traveled by our more rural patients has been increasing. For example, our more rural patientes of the state traveled 60 miles on average in 2010, which increased to nearly 80 miles by 2018. This is an increase of 33%.
+Another worrisome trend is that the distances traveled by our more rural patients has been increasing. For example, our more rural patients of the state traveled 60 miles on average in 2010, which increased to nearly 80 miles by 2018. This is an increase of 33%.
 
 <br>
 
@@ -192,7 +192,7 @@ girafe(ggobj = ip.pr.plot, width_svg = 8) %>%
 
 ## EDR {.tabset}
 
-Not suprisingly, there is plenty of variation within planning regions. Patients from EDRs that lack a significant economic center were likely to have higher travel distances. 
+Not surprisingly, there is plenty of variation within planning regions. Patients from EDRs that lack a significant economic center were likely to have higher travel distances. 
 
 <br>
 
@@ -270,13 +270,15 @@ girafe(ggobj = ip.obs.edr.plot, height_svg = 8) %>%
 
 # Distances traveled by outpatient care and region {.tabset}
 
-Analysis here
+Again, as a patient originates from a more rural area, the travel distances increase. However, these differences aren't as severe compared to inpatient services. Typically, the difference is double rather than 3 to 4 times longer.
 
 <br>
 
 ## RUCA
 
-Summary here
+Again, as a patient originates from a more rural area, the travel distances increase. However, the differences between the highest and lowest times are not as severe. It's about 1 to 1.5 times further. The most concerning is Stroke, where entirely rural patients traveled 35 miles, compared to 11 for entirely urban patients.
+
+In addition, we are not seeing large increases in travel times compared to inpatient care. However, Diabetes is increasing for entirely rural patients for some reason.
 
 <br>
 
@@ -302,6 +304,8 @@ girafe(ggobj = op.ruca.plot, width_svg = 8, height_svg = 7) %>%
 
 ## Planning Region
 
+When broken down by regions, we are not seeing as large of differences. Of course, regions outside of the seven metro have longer travel distances, but typically less than double. Stroke is still kind of high as well as pneumonia.
+
 <br>
 
 ```{r charts distance traveled outpatient pr, fig.height=8}
@@ -326,7 +330,7 @@ girafe(ggobj = op.pr.plot, width_svg = 8, height_svg = 8) %>%
 
 ## EDR {.tabset}
 
-Summary here
+You still see plenty of differences within planning regions. Patients from our more rural EDRs have a significantly higher travel distance compared to other EDRs that may have more of an urban center in it. This is particularly true in Northwest and Southwest.
 
 <br>
 
@@ -353,7 +357,7 @@ girafe(ggobj = op.bronch.edr.plot, height_svg = 8) %>%
                  opts_sizing(rescale = FALSE))
 ```
 
-## Diabetes
+### Diabetes
 
 <br>
 
@@ -376,7 +380,7 @@ girafe(ggobj = op.diab.edr.plot, height_svg = 8) %>%
                  opts_sizing(rescale = FALSE))
 ```
 
-## Intracranial injury
+### Intracranial injury
 
 <br>
 
@@ -399,7 +403,7 @@ girafe(ggobj = op.cran.edr.plot, height_svg = 8) %>%
                  opts_sizing(rescale = FALSE))
 ```
 
-## Pneumonia
+### Pneumonia
 
 <br>
 
@@ -422,7 +426,7 @@ girafe(ggobj = op.pneu.edr.plot, height_svg = 8) %>%
                  opts_sizing(rescale = FALSE))
 ```
 
-## Stroke
+### Stroke
 
 <br>
 
