@@ -17,6 +17,8 @@ navbar:
       href: payer_mix.html
     - text: "Admissions"
       href: admissions.html
+    - text: "Health care access"
+      href: access.html
 output:
   html_document:
     css: "styles.css"

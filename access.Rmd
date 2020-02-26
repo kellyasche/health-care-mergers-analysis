@@ -129,13 +129,19 @@ master.op.distances.edr <- read_csv("Data/Access/Master-op-distances-edr.csv") %
 
 # Distances traveled by inpatient care and region {.tabset}
 
-Summary here
+The rural-ness from which a patient originates has a significant impact on how likely they travel for the three inpatient services. In fact, patients from our most rural parts of the state traveled 3 to 4 times longer than their more urban colleagues. 
+
+For example, patients from entirely rural areas traveled 77 miles for cardiology, where as patients from entirely urban counties averaged 21.
+
+There were also signficant regional differences. Broken down by planning regions, patient travel distances were significanlty higher from other regions depending on the "rural-ness" of that planning region. The northern part of the state in particular had signifanctly higher travel times.
 
 <br>
 
 ## RUCA
 
-As a hospital becomes more rural, the distance their patients travel for a service becomes significantly longer. 
+As a hospital becomes more rural, the distance their patients travel for a service becomes significantly longer. In fact, for the three analyzed services provided below, distances traveled for services by our most rural patients was 3 to 4 times more than our most urban patients. The largest difference was for neurology, where patients in entirely rural areas traveled 100 miles on average compared to just 22 for our entirely urban patients.
+
+Another worrisome trend is that the distances traveled by our more rural patients has been increasing. For example, our more rural patientes of the state traveled 60 miles on average in 2010, which increased to nearly 80 miles by 2018. This is an increase of 33%.
 
 <br>
 
@@ -143,7 +149,7 @@ As a hospital becomes more rural, the distance their patients travel for a servi
 ip.ruca.plot <- ggplot(master.ip.distances.ruca, aes(Year, mean.miles, color = Dem_Desc)) +
   geom_smooth(se = FALSE, size = 2) +
   geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(Dem_Desc, "\nYear: ", Year, "\nService: ", service.line, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
-  facet_wrap(~service.line, ncol = 2) +
+  facet_wrap(~service.line, ncol = 2, scales = "free_y") +
   labs(x="", y = "", color="", title = "Average miles traveled for inpatient service")+
   scale_y_continuous(labels=scales::comma)+
   scale_x_continuous(breaks = seq(1900, 2050, 2)) +
@@ -161,7 +167,7 @@ girafe(ggobj = ip.ruca.plot, width_svg = 8) %>%
 
 ## Planning Region
 
-Analysis here
+All regions outside of the seven county metro have higher travel distances to these services. The northern parts of the state were consistently the top two highest travel distances for these services. In addition, the Northwest, Northeast, and Southwest regions all had increasing travel times since 2010. 
 
 <br>
 
@@ -169,7 +175,7 @@ Analysis here
 ip.pr.plot <- ggplot(master.ip.distances.pr, aes(Year, mean.miles, color = planning.region)) +
   geom_smooth(se = FALSE, size = 2) +
   geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(planning.region, "\nYear: ", Year, "\nService: ", service.line, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
-  facet_wrap(~service.line, ncol = 2) +
+  facet_wrap(~service.line, ncol = 2, scales = "free_y") +
   labs(x="", y = "", color="", title = "Average miles traveled for inpatient service")+
   scale_y_continuous(labels=scales::comma)+
   scale_x_continuous(breaks = seq(1900, 2050, 2)) +
@@ -186,7 +192,7 @@ girafe(ggobj = ip.pr.plot, width_svg = 8) %>%
 
 ## EDR {.tabset}
 
-Analysis here
+Not suprisingly, there is plenty of variation within planning regions. Patients from EDRs that lack a significant economic center were likely to have higher travel distances. 
 
 <br>
 
@@ -197,7 +203,7 @@ Analysis here
 ```{r charts distance traveled inpatient cargiology edr, fig.height=9}
 ip.card.edr.plot <- ggplot(filter(master.ip.distances.edr, service.line == "Cardiology"), aes(Year, mean.miles, color = edr)) +
   geom_smooth(se = FALSE, size = 2) +
-  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(planning.region, "\nYear: ", Year, "\nService: ", service.line, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", service.line, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
   facet_wrap(~planning.region, ncol = 2) +
   labs(x="", y = "", color="", title = "Average miles traveled for inpatient service - cardiology")+
   scale_y_continuous(labels=scales::comma)+
@@ -259,3 +265,185 @@ girafe(ggobj = ip.obs.edr.plot, height_svg = 8) %>%
                  opts_toolbar(saveaspng = FALSE) ,
                  opts_sizing(rescale = FALSE))
 ```
+
+<br>
+
+# Distances traveled by outpatient care and region {.tabset}
+
+Analysis here
+
+<br>
+
+## RUCA
+
+Summary here
+
+<br>
+
+```{r charts distance traveled outpatient ruca, fig.height=7}
+op.ruca.plot <- ggplot(master.op.distances.ruca, aes(Year, mean.miles, color = Dem_Desc)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(Dem_Desc, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~type, ncol = 2, scales = "free_y") +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.ruca,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.ruca.plot, width_svg = 8, height_svg = 7) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+## Planning Region
+
+<br>
+
+```{r charts distance traveled outpatient pr, fig.height=8}
+op.pr.plot <- ggplot(master.op.distances.pr, aes(Year, mean.miles, color = planning.region)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(planning.region, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~type, ncol = 2, scales = "free_y") +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.pr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.pr.plot, width_svg = 8, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+
+```
+
+## EDR {.tabset}
+
+Summary here
+
+<br>
+
+### COPD and Bronch
+
+<br>
+
+```{r charts distance traveled outpatient COPD and Bronch edr, fig.height=9}
+op.bronch.edr.plot <- ggplot(filter(master.op.distances.edr, type == "COPD and Bronch"), aes(Year, mean.miles, color = edr)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~planning.region, ncol = 2) +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service - COPD and Bronch")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.edr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.bronch.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+## Diabetes
+
+<br>
+
+```{r charts distance traveled outpatient Diabetes edr, fig.height=9}
+op.diab.edr.plot <- ggplot(filter(master.op.distances.edr, type == "Diabetes"), aes(Year, mean.miles, color = edr)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~planning.region, ncol = 2) +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service - Diabetes")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.edr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.diab.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+## Intracranial injury
+
+<br>
+
+```{r charts distance traveled outpatient intracranial edr, fig.height=9}
+op.cran.edr.plot <- ggplot(filter(master.op.distances.edr, type == "Intracranial injury"), aes(Year, mean.miles, color = edr)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~planning.region, ncol = 2) +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service - Intracranial injury")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.edr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.cran.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+## Pneumonia
+
+<br>
+
+```{r charts distance traveled outpatient pneumonia edr, fig.height=9}
+op.pneu.edr.plot <- ggplot(filter(master.op.distances.edr, type == "Pneumonia"), aes(Year, mean.miles, color = edr)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~planning.region, ncol = 2) +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service - Pneumonia")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.edr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.pneu.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+## Stroke
+
+<br>
+
+```{r charts distance traveled outpatient stroke edr, fig.height=9}
+op.stroke.edr.plot <- ggplot(filter(master.op.distances.edr, type == "Stroke"), aes(Year, mean.miles, color = edr)) +
+  geom_smooth(se = FALSE, size = 2) +
+  geom_point_interactive(size = 3, aes(data_id = Year, tooltip = paste(edr, "\nYear: ", Year, "\nService: ", type, "\nAverage miles traveled: ", comma(mean.miles), "\nMedian miles traveled: ", comma(median.miles), sep = ""))) +
+  facet_wrap(~planning.region, ncol = 2) +
+  labs(x="", y = "", color="", title = "Average miles traveled for outpatient service - Stroke")+
+  scale_y_continuous(labels=scales::comma)+
+  scale_x_continuous(breaks = seq(1900, 2050, 2)) +
+  theme_line+
+  scale_color_manual(values= color.edr,
+                     guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom")
+
+girafe(ggobj = op.stroke.edr.plot, height_svg = 8) %>%
+  girafe_options(opts_selection(type = "none"),
+                 opts_toolbar(saveaspng = FALSE) ,
+                 opts_sizing(rescale = FALSE))
+```
+
+
+

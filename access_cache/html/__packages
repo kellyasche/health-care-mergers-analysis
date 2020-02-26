@@ -1,5 +1,4 @@
 base
-shiny
 tidyverse
 ggplot2
 tibble
@@ -12,10 +11,10 @@ forcats
 sf
 ggrepel
 scales
+shiny
 shinycssloaders
 ggiraph
 kableExtra
 rmapshaper
 cowplot
 DT
-gdtools
